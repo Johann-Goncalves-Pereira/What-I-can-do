@@ -1,0 +1,28 @@
+.scroll {
+    $scroll-size: 4px;
+
+    scrollbar-width: $scroll-size;
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
+    // don't work at firefox
+    &::-webkit-scrollbar {
+        width: $scroll-size;
+        height: $scroll-size;
+        border-radius: 0.25rem;
+        background: transparent;
+
+        &-track {
+            background: transparent;
+            border-radius: 0.25rem;
+            width: 0;
+        }
+
+        &-thumb {
+            background: var(--clr-main);
+            border-radius: 0.25rem;
+        }
+    }
+
+    &::selection {
+        background-color: var(--clr-main);
+    }
+}

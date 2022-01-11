@@ -1,36 +1,24 @@
 @use "../abstracts/" as *;
 
-// Attribute order
-/* Content */
-/* Positioning */
-/* Display & Box Model */
-/* Color */
-/* Text */
-
 .false-class------IDE {
-	--clr-background: #040014;
-	--clr-forward: #222125;
-	--clr-hover: #994200;
-	--clr-main: #ff7700;
-	--clr-border: #ff9d00;
-	--clr-text: #f9f8ff;
+	--clr-background: #040014; // rgba(4, 0, 20, 1)    	hsl(252, 100%, 4%)
+	--clr-forward: #222125; // rgba(34, 33, 37, 1)  	hsl(255, 6%, 14%)
+	--clr-hover: #994200; // rgba(153, 66, 0, 1)  	hsl(26, 100%, 30%)
+	--clr-main: #ff7700; // rgba(255, 119, 0, 1) 	hsl(28, 100%, 50%)
+	--clr-border: #ff9d00; // rgba(255, 157, 0, 1) 	hsl(37, 100%, 50%)
+	--clr-text: #f9f8ff; // rgb(249, 248, 255)   	hsl(249, 100%, 99%)
 }
 
 :root {
-	// Put your var Colors
-	// Output:  rgba(4, 0, 20, 1) hsl(252, 100%, 4%) #040014
+	//: Colors
 	@include defineColorHSL(--clr-background, 252, 100%, 4%);
-	// Output: rgba(34, 33, 37, 1) hsl(255, 6%, 14%) #222125
 	@include defineColorHSL(--clr-forward, 255, 6%, 14%);
-	// Output: rgba(153, 66, 0, 1) hsl(26, 100%, 30%) #994200
 	@include defineColorHSL(--clr-hover, 26, 100%, 30%);
-	// Output: rgba(255, 119, 0, 1) hsl(28, 100%, 50%) #ff7700
 	@include defineColorHSL(--clr-main, 28, 100%, 50%);
-	// Output: rgba(255, 157, 0, 1) hsl(37, 100%, 50%) #ff9d00
 	@include defineColorHSL(--clr-border, 37, 100%, 50%);
-	// output: rgb(249, 248, 255) hsl(249, 100%, 99%) #f9f8ff;
 	@include defineColorHSL(--clr-text, 249, 100%, 99%);
 
+	//: Text Size
 	--title-big: clamp(3rem, 3.5vw + 1rem, 7rem);
 	--title-medium: clamp(2rem, 1.875vw + 1rem, 6rem);
 	--title-normal: clamp(1.5rem, 1vw + 1rem, 5rem);
@@ -38,127 +26,38 @@
 	--text-big: clamp(2rem, 3.5vw + 1rem, 4rem);
 	--text-normal: clamp(1rem, 0.5vw + 0.5rem, 3rem);
 
-	--border-radius: 8px;
+	//: Border
+	--border-radius-l: 8px;
+	--border-radius-s: 4px;
+
+	//: Breakpoint
+	--breakpoint-l-desktop: 1920px;
+	--breakpoint-m-desktop: 1440px;
+	--breakpoint-s-desktop: 1024px;
+	--breakpoint-tablet: 730px;
 }
 
-* {
-	$scroll-size: 4px;
-	// Set default font and color.
-	font-family: "Rubik", sans-serif;
-	color: var(--clr-text);
-
-	// https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
-	// don't work at firefox
-	&::-webkit-scrollbar {
-		width: $scroll-size;
-		height: $scroll-size;
-		border-radius: 0.25rem;
-		background: transparent;
-	}
-
-	&::-webkit-scrollbar-track {
-		background: transparent;
-		border-radius: 0.25rem;
-		width: 0;
-	}
-
-	&::-webkit-scrollbar-thumb {
-		background: var(--clr-main);
-		border-radius: 0.25rem;
-	}
-
-	&::selection {
-		background-color: var(--clr-main);
-	}
-
-	scrollbar-width: $scroll-size;
-}
-
-// Body have fit all space available.
-html {
-	box-sizing: border-box;
-	width: 100%;
-	height: 100%;
-	margin: 0;
-}
-
-body {
-	box-sizing: border-box;
-	overflow: auto;
-	overflow: overlay;
-	min-height: 100%;
-	margin: 0;
-
-	background-color: var(--clr-background);
-}
-
-// Reset Settings.
-ol,
-ul,
-li {
-	list-style-type: none;
-}
-
-a {
-	text-decoration: none;
-	cursor: pointer;
-}
-
-button {
-	cursor: pointer;
-	border: 0;
-}
-
-strong {
-	font-weight: bold;
-}
-
-::placeholder {
-	color: var(--clr-background);
-}
-:focus {
-	outline: 0;
-}
-
-input {
-	// https://developer.mozilla.org/en-US/docs/Web/CSS/:autofill
-	// auto fill don't change.
-	&:-webkit-autofill,
-	&:-webkit-autofill:hover,
-	&:-webkit-autofill:focus,
-	&:-webkit-autofill:active {
-		transition: color 9999s ease-out;
-		transition-delay: 9999s;
-	}
-}
-
-// More ease to understand what this vars a used for.
-$breakpoint-large-desktop: 1920px;
-$breakpoint-medium-desktop: 1440px;
-$breakpoint-small-desktop: 1024px;
-$breakpoint-tablet: 730px;
-
-// Change html size for Rem unit change.
-@media (max-width: $breakpoint-medium-desktop) {
+//? Change html size for Rem unit change.
+@media (max-width: var(--breakpoint-l-desktop)) {
 	html {
 		font-size: 93.75%;
 	}
 }
 
-@media (max-width: $breakpoint-small-desktop) {
+@media (max-width: var(--breakpoint-s-desktop)) {
 	html {
 		font-size: 87.5%;
 	}
 }
 
-@media (max-width: $breakpoint-tablet) {
+@media (max-width: var(--breakpoint-tablet)) {
 	html {
 		font-size: 75%;
 	}
 
-	*::-webkit-scrollbar {
-		display: none;
-	}
+	// *::-webkit-scrollbar {
+	// 	display: none;
+	// }
 }
 
 //? https://web.dev/prefers-reduced-motion/#(bonus)-forcing-reduced-motion-on-all-websites
