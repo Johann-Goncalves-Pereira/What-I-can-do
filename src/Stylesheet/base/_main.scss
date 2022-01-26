@@ -1,75 +1,7 @@
 @use "../abstracts/" as *;
 
-.false-class------IDE {
-	--clr-background: #040014; // rgba(4, 0, 20, 1)    	hsl(252, 100%, 4%)
-	--clr-forward: hsl(258, 10%, 20%); // rgba(34, 33, 37, 1)  	hsl(255, 6%, 14%)
-	--clr-hover: #994200; // rgba(153, 66, 0, 1)  	hsl(26, 100%, 30%)
-	--clr-main: #ff7700; // rgba(255, 119, 0, 1) 	hsl(28, 100%, 50%)
-	--clr-border: #ff9d00; // rgba(255, 157, 0, 1) 	hsl(37, 100%, 50%)
-	--clr-text: #f9f8ff; // rgb(249, 248, 255)   	hsl(249, 100%, 99%)
-}
-
-:root {
-	@include defineColorHSL(--clr-background, 0, 0%, 10%);
-	@include defineColorHSL(--clr-forward, 258, 10%, 20%);
-	@include defineColorHSL(--clr-hover, 13, 99%, 61%);
-	@include defineColorHSL(--clr-main, 11, 98%, 59%);
-	@include defineColorHSL(--clr-border, 228, 8%, 12%);
-	@include defineColorHSL(--clr-text, 0, 0%, 96%);
-
-	//: Text Size
-	--title-big: clamp(3rem, 3.5vw + 1rem, 7rem);
-	--title-medium: clamp(2rem, 1.875vw + 1rem, 6rem);
-	--title-normal: clamp(1.5rem, 1vw + 1rem, 5rem);
-
-	--text-big: clamp(2rem, 3.5vw + 1rem, 4rem);
-	--text-normal: clamp(1rem, 0.5vw + 0.5rem, 3rem);
-
-	//: Border
-	--border-radius-l: 8px;
-	--border-radius-s: 4px;
-
-	//: Breakpoint
-	--breakpoint-l-desktop: 1920px;
-	--breakpoint-m-desktop: 1440px;
-	--breakpoint-s-desktop: 1024px;
-	--breakpoint-tablet: 730px;
-}
-
-//? Change html size for Rem unit change.
-@media (max-width: var(--breakpoint-l-desktop)) {
-	html {
-		font-size: 93.75%;
-	}
-}
-
-@media (max-width: var(--breakpoint-s-desktop)) {
-	html {
-		font-size: 87.5%;
-	}
-}
-
-@media (max-width: var(--breakpoint-tablet)) {
-	html {
-		font-size: 75%;
-	}
-
-	// *::-webkit-scrollbar {
-	// 	display: none;
-	// }
-}
-
-//? https://web.dev/prefers-reduced-motion/#(bonus)-forcing-reduced-motion-on-all-websites
-@media (prefers-reduced-motion: reduce) {
-	*,
-	::before,
-	::after {
-		animation-delay: -1ms !important;
-		animation-duration: 1ms !important;
-		animation-iteration-count: 1 !important;
-		background-attachment: initial !important;
-		scroll-behavior: auto !important;
-		transition-duration: 0s !important;
-		transition-delay: 0s !important;
-	}
+main {
+	background-image: linear-gradient(315deg, var(--clr-background) 0%, var(--clr-forward) 100%);
+	backdrop-filter: blur(10px);
+	height: 100vh;
 }

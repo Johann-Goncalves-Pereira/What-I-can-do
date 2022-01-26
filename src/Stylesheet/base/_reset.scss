@@ -112,7 +112,7 @@ html {
 body {
     line-height: 1;
     font-family: "Rubik", sans-serif;
-    // color: var(--clr-text);
+    color: var(--clr-text);
 }
 
 ol,
@@ -141,9 +141,6 @@ body {
     overflow: overlay;
     min-height: 100%;
     margin: 0;
-
-    background-image: linear-gradient(315deg, var(--clr-background) 0%, var(--clr-forward) 100%);
-    backdrop-filter: blur(10px);
 }
 
 a {
@@ -170,13 +167,28 @@ strong {
 }
 
 input {
-    // https://developer.mozilla.org/en-US/docs/Web/CSS/:autofill
-    // auto fill don't change.
+    //? https://developer.mozilla.org/en-US/docs/Web/CSS/:autofill
+    //? auto fill don't change.
     &:-webkit-autofill,
     &:-webkit-autofill:hover,
     &:-webkit-autofill:focus,
     &:-webkit-autofill:active {
         transition: color 9999s ease-out;
         transition-delay: 9999s;
+    }
+}
+
+//? https://web.dev/prefers-reduced-motion/#(bonus)-forcing-reduced-motion-on-all-websites
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        animation-delay: -1ms !important;
+        animation-duration: 1ms !important;
+        animation-iteration-count: 1 !important;
+        background-attachment: initial !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0s !important;
+        transition-delay: 0s !important;
     }
 }

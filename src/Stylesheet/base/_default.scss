@@ -1,14 +1,15 @@
 @use "../abstracts/" as *;
 
 .scroll {
-    $scroll-size: 4px;
+    $ss: 4px;
 
-    scrollbar-width: $scroll-size;
+    scrollbar-width: $ss;
+
     // https://developer.mozilla.org/en-US/docs/Web/CSS/::-webkit-scrollbar
     // don't work at firefox
     &::-webkit-scrollbar {
-        width: $scroll-size;
-        height: $scroll-size;
+        width: $ss;
+        height: $ss;
         border-radius: 0.25rem;
         background: transparent;
 

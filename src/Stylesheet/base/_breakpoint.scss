@@ -1,0 +1,18 @@
+//? Change html size for Rem unit change.
+@media (max-width: var(--breakpoint-l-desktop)) {
+    html {
+        font-size: 93.75%;
+    }
+}
+
+@media (max-width: var(--breakpoint-s-desktop)) {
+    html {
+        font-size: 87.5%;
+    }
+}
+
+@media (max-width: var(--breakpoint-tablet)) {
+    html {
+        font-size: 75%;
+    }
+}

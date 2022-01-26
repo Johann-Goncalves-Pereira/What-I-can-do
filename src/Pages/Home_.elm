@@ -61,5 +61,8 @@ view model =
     , body =
         UI.layout model.route
             "home"
-            []
+            [ section [ class "cntr" ]
+                [ h1 [ class "cntr__title" ] [ text "I am love Html & Css" ]
+                ]
+            ]
     }
