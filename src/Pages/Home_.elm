@@ -63,11 +63,3 @@ view model =
             "home"
             []
     }
-
-
-
--- Main Content
--- viewMainContent : Html Msg
--- viewMainContent =
---     section [ class "main-home" ]
---         []

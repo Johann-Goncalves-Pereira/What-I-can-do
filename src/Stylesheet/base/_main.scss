@@ -2,7 +2,7 @@
 
 .false-class------IDE {
 	--clr-background: #040014; // rgba(4, 0, 20, 1)    	hsl(252, 100%, 4%)
-	--clr-forward: #222125; // rgba(34, 33, 37, 1)  	hsl(255, 6%, 14%)
+	--clr-forward: hsl(258, 10%, 20%); // rgba(34, 33, 37, 1)  	hsl(255, 6%, 14%)
 	--clr-hover: #994200; // rgba(153, 66, 0, 1)  	hsl(26, 100%, 30%)
 	--clr-main: #ff7700; // rgba(255, 119, 0, 1) 	hsl(28, 100%, 50%)
 	--clr-border: #ff9d00; // rgba(255, 157, 0, 1) 	hsl(37, 100%, 50%)
@@ -10,6 +10,13 @@
 }
 
 :root {
+	@include defineColorHSL(--clr-background, 0, 0%, 10%);
+	@include defineColorHSL(--clr-forward, 258, 10%, 20%);
+	@include defineColorHSL(--clr-hover, 13, 99%, 61%);
+	@include defineColorHSL(--clr-main, 11, 98%, 59%);
+	@include defineColorHSL(--clr-border, 228, 8%, 12%);
+	@include defineColorHSL(--clr-text, 0, 0%, 96%);
+
 	//: Text Size
 	--title-big: clamp(3rem, 3.5vw + 1rem, 7rem);
 	--title-medium: clamp(2rem, 1.875vw + 1rem, 6rem);

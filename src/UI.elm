@@ -12,9 +12,6 @@ isRoute route compare =
         ( Route.Home_, Route.Home_ ) ->
             True
 
-        ( Route.Layout__Music, Route.Layout__Music ) ->
-            True
-
         _ ->
             False
 
@@ -41,8 +38,7 @@ layout route pageName content =
         [ nav [ class "main-header__nav" ]
             [ viewLink "Home" Route.Home_
             , ul [ class "main-header__list" ]
-                [ viewLink "Music" Route.Layout__Music
-                ]
+                []
             ]
         ]
     , main_ [ class <| "main--" ++ pageName ] content
