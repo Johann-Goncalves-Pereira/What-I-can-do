@@ -4,6 +4,7 @@ import Gen.Route as Route exposing (Route)
 import Html exposing (Html, a, button, header, li, main_, nav, text, ul)
 import Html.Attributes exposing (class, classList, href)
 import Platform exposing (Router)
+import Svg.ElmSvg as ESvg
 
 
 isRoute : Route -> Route -> Bool
@@ -32,6 +33,7 @@ layout route pageName content =
                         ]
                     ]
                     [ text label ]
+                , ESvg.twoArrows ESvg.Text
                 ]
     in
     [ header [ class "main-header" ]
