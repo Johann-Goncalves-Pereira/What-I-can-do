@@ -4,4 +4,5 @@ function requireAll(r) {
 
 requireAll(require.context("../Stylesheet", true, /\.*/));
 requireAll(require.context("../Stylesheet/base/", true, /\.*/));
-requireAll(require.context("../Stylesheet/abstracts", true, /\.*/));
+requireAll(require.context("../Stylesheet/pages/", true, /\.*/));
+requireAll(require.context("../Stylesheet/abstracts/", true, /\.*/));

@@ -134,3 +134,4 @@ elm-stuff
 public/dist
 yarn-error
 .vscode
+node_modules

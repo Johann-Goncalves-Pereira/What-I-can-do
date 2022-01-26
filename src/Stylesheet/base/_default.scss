@@ -1,3 +1,5 @@
+@use "../abstracts/" as *;
+
 .scroll {
     $scroll-size: 4px;
 
@@ -25,4 +27,14 @@
     &::selection {
         background-color: var(--clr-main);
     }
+}
+
+.main-header {
+    //! For now
+    display: none;
+}
+
+main {
+    background-color: var(--clr-background);
+    color: var(--clr-text);
 }

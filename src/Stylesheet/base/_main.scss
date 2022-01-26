@@ -10,14 +10,6 @@
 }
 
 :root {
-	//: Colors
-	@include defineColorHSL(--clr-background, 252, 100%, 4%);
-	@include defineColorHSL(--clr-forward, 255, 6%, 14%);
-	@include defineColorHSL(--clr-hover, 26, 100%, 30%);
-	@include defineColorHSL(--clr-main, 28, 100%, 50%);
-	@include defineColorHSL(--clr-border, 37, 100%, 50%);
-	@include defineColorHSL(--clr-text, 249, 100%, 99%);
-
 	//: Text Size
 	--title-big: clamp(3rem, 3.5vw + 1rem, 7rem);
 	--title-medium: clamp(2rem, 1.875vw + 1rem, 6rem);

@@ -6,10 +6,8 @@ import Html exposing (Html, a, article, b, br, div, h1, h2, h3, img, main_, p, s
 import Html.Attributes exposing (attribute, class, id, src, style)
 import Html.Events exposing (onClick)
 import Page exposing (Page)
-import Preview.Kelpie.Kelpie as Kelpie exposing (view)
 import Request exposing (Request)
 import Shared
-import Svg.Base as MSvg
 import UI
 import View exposing (View)
 
@@ -29,14 +27,12 @@ page shared req =
 
 type alias Model =
     { route : Route
-    , scrollSample : Bool
     }
 
 
 init : Model
 init =
     { route = Route.Home_
-    , scrollSample = False
     }
 
 
@@ -45,14 +41,14 @@ init =
 
 
 type Msg
-    = ShowSample
+    = NoOp
 
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        ShowSample ->
-            { model | scrollSample = not model.scrollSample }
+        NoOp ->
+            { model | route = model.route }
 
 
 
@@ -64,16 +60,14 @@ view model =
     { title = "Johann - Home"
     , body =
         UI.layout model.route
-            [ viewMainContent
-            ]
+            "home"
+            []
     }
 
 
 
 -- Main Content
-
-
-viewMainContent : Html Msg
-viewMainContent =
-    main_ [ class "main-home" ]
-        []
+-- viewMainContent : Html Msg
+-- viewMainContent =
+--     section [ class "main-home" ]
+--         []
