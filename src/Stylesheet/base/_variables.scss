@@ -17,6 +17,7 @@
     @include defineColorHSL(--clr-border, 228, 8%, 12%);
     @include defineColorHSL(--clr-text, 0, 0%, 96%);
 
+    //: Text Size
     @for $i from 1 through 18 {
         $txt-math-base: 0.125;
         $db: 2 + $txt-math-base;
@@ -27,25 +28,16 @@
         --fs-#{$i}: clamp(#{$convert-base}rem, #{$convert-base}vw + #{$convert-base}rem, #{$convert-max}rem);
     }
 
-    //: Text Size
-    // --title-big: clamp(3rem, 3.5vw + 1rem, 7rem);
-    // --title-medium: clamp(2rem, 1.875vw + 1rem, 6rem);
-    // --title-normal: clamp(1.5rem, 1vw + 1rem, 5rem);
-
-    // --text-big: clamp(2rem, 3.5vw + 1rem, 4rem);
-    // --text-medium: clamp(1.5rem, 0.75vw + 0.5rem, 3rem);
-    // --text-normal: clamp(1rem, 0.5vw + 0.5rem, 2.5rem);
-    // --text-normal: clamp(1rem, 0.5vw + 0.5rem, 2.5rem);
-    // --text-small: clamp(0.875rem, 0.4vw + 0.4rem, 2rem);
-    // --text-s-small: clamp(0.75rem, 0.2vw + 0.3rem, 1.5rem);
-
     //: Border
-    --border-radius-l: 8px;
-    --border-radius-s: 4px;
+    @for $i from 1 through 10 {
+        $border-calc: $i * 2;
+
+        --br-#{#{$border-calc}}: #{$border-calc}px;
+    }
 
     //: Breakpoint
-    --breakpoint-l-desktop: 1920px;
-    --breakpoint-m-desktop: 1440px;
-    --breakpoint-s-desktop: 1024px;
-    --breakpoint-tablet: 730px;
+    --br-l-desktop: 1920px;
+    --br-m-desktop: 1440px;
+    --br-s-desktop: 1024px;
+    --br-xs-tablet: 730px;
 }

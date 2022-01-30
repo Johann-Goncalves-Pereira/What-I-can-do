@@ -4,32 +4,72 @@
 .main--home {
     @include defineColorHSL(--clr-background, 218, 9%, 18%);
     @include defineColorHSL(--clr-shadow, 230, 10%, 12%);
-    @include defineColorHSL(--clr-main-blue, 219, 99%, 51%);
-    @include defineColorHSL(--clr-main-purple, 287, 88%, 68%);
+    @include defineColorHSL(--clr-main, 219, 99%, 51%);
+    @include defineColorHSL(--clr-main-gradient, 292, 87%, 66%);
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2em;
 
     box-shadow: inset 0 0 32px -12px var(--clr-shadow);
     box-sizing: border-box;
-    padding: 15vh 10vw;
+    padding: Max(2em, 5vh) Max(2em, 5vw);
 
     background: var(--clr-background);
     font-family: "Montserrat", sans-serif;
 
     .shallow {
+        @mixin bs($up: true, $blur, $size) {
+            @if $up {
+                box-shadow: 0 0 $blur 0 var(--clr-shadow), $size $size #{$blur * 0.5} #{$size * -0.75} var(--clr-shadow),
+                    inset $size $size $blur 0 alpha(var(--clr-text), 0.05),
+                    inset #{-$size} #{-$size} $blur 0 var(--clr-shadow);
+            } @else {
+                box-shadow: inset $size $size $blur 0 var(--clr-shadow),
+                    inset #{-$size} #{-$size} $blur 0 alpha(var(--clr-text), 0.05);
+            }
+        }
+
         &--down,
         &--up {
             padding: 2em;
-            border-radius: calc(var(--border-radius-l) * 2);
+            border-radius: var(--br-16);
             width: fit-content;
             height: fit-content;
         }
 
         &--down {
             background-color: alpha(var(--clr-shadow), 0.05);
-            box-shadow: inset 10px 10px 15px 0 var(--clr-shadow), inset -10px -10px 15px 0 alpha(var(--clr-text), 0.05);
+            @include bs(false, 15px, 10px);
         }
         &--up {
-            box-shadow: 0 0 15px 0 var(--clr-shadow), inset 10px 10px 15px 0 alpha(var(--clr-text), 0.05),
-                inset -10px -10px 15px 0 var(--clr-shadow);
+            @include bs(true, 15px, 10px);
+
+            &.btm {
+                $size: 5em;
+                padding: 0;
+
+                height: $size;
+                width: $size * 2;
+
+                background-color: transparent;
+                color: var(--clr-text);
+
+                transition: box-shadow 100ms ease-in;
+
+                svg {
+                    transition: transform 100ms ease-in;
+                }
+
+                &:focus-visible,
+                &:focus {
+                    @include bs(true, 10px, 2px);
+
+                    :is(svg, em) {
+                        transform: scale(0.9);
+                    }
+                }
+            }
         }
     }
 
@@ -62,6 +102,24 @@
                 font-weight: 600;
             }
         }
+
+        &__btm {
+            &--fc {
+                display: flex;
+                flex-direction: column;
+                gap: 2em;
+            }
+
+            &--fr {
+                display: flex;
+                gap: 1.5em;
+
+                .btm em {
+                    font-size: var(--fs-4);
+                    font-weight: 600;
+                }
+            }
+        }
     }
 
     .weather {
@@ -74,10 +132,12 @@
         gap: 2em;
 
         width: min-content;
+
         &__txt {
             &--n {
                 grid-area: degree;
-                padding-right: $sad;
+                margin-right: #{$sad};
+                margin-left: 1em;
                 width: min-content;
                 margin-bottom: 4em;
             }
@@ -103,7 +163,7 @@
         }
 
         &::after {
-            $sab: 90px;
+            $sab: 100px;
             content: "";
 
             display: block;
@@ -112,10 +172,37 @@
             margin: auto auto 0 0;
             border-radius: 50%;
 
-            background-image: linear-gradient(45deg, var(--clr-main-blue), var(--clr-main-purple));
+            background-image: linear-gradient(45deg, var(--clr-main), var(--clr-main-gradient));
 
             width: $sab;
             height: $sab;
+        }
+    }
+
+    .line-btm {
+        &__btm {
+            height: 4em !important;
+            width: 4em;
+
+            svg {
+                path {
+                    fill: var(--clr-shadow);
+                }
+            }
+
+            &:focus-visible,
+            &:focus {
+                svg path {
+                    fill: url(#gradient-id);
+                }
+                // svg {
+                //     @for $i from 1 through 2 {
+                //         path:nth-child(#{$i}) {
+                //             fill: url(#gradient-#{$i});
+                //         }
+                //     }
+                // }
+            }
         }
     }
 }
