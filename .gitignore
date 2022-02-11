@@ -135,3 +135,6 @@ public/dist
 yarn-error
 .vscode
 node_modules
+
+# src/.UI.elm.swp
+**/**.swp
