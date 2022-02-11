@@ -7,6 +7,8 @@
     @include defineColorHSL(--clr-main, 219, 99%, 51%);
     @include defineColorHSL(--clr-main-gradient, 292, 87%, 66%);
 
+    --btm-h: 64px;
+
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 2em;
@@ -46,11 +48,10 @@
             @include bs(true, 15px, 10px);
 
             &.btm {
-                $size: 5em;
                 padding: 0;
 
-                height: $size;
-                width: $size * 2;
+                height: var(--btm-h);
+                width: calc(var(--btm-h) * 2);
 
                 background-color: transparent;
                 color: var(--clr-text);
@@ -61,8 +62,9 @@
                     transition: transform 100ms ease-in;
                 }
 
-                &:focus-visible,
-                &:focus {
+                // &:focus-visible,
+                // &:focus
+                &:active {
                     @include bs(true, 10px, 2px);
 
                     :is(svg, em) {
@@ -117,6 +119,39 @@
                 .btm em {
                     font-size: var(--fs-4);
                     font-weight: 600;
+                }
+            }
+        }
+
+        &__search-bar {
+            display: flex;
+
+            padding: 0;
+
+            height: var(--btm-h);
+            width: 100%;
+
+            color: var(--clr-text);
+
+            .input {
+                // padding: 0.5em 1em;
+                padding-left: 1em;
+
+                height: 100%;
+                width: inherit;
+
+                border: 0;
+                background: transparent;
+                color: inherit;
+                font-size: var(--fs-6);
+            }
+
+            .btm {
+                height: 100%;
+                width: 6em;
+
+                svg {
+                    transform: scale(1.3);
                 }
             }
         }
@@ -180,8 +215,14 @@
     }
 
     .line-btm {
+        grid-area: lineButtons;
+
+        .btm,
         &__btm {
-            height: 4em !important;
+            height: calc(var(--btm-h) - 1em) !important;
+        }
+
+        &__btm {
             width: 4em;
 
             svg {
