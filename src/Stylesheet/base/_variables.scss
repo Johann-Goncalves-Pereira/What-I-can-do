@@ -25,7 +25,7 @@
         $convert-max: $convert-base * $db;
         $convert-min: $convert-base - $txt-math-base;
 
-        --fs-#{$i}: clamp(#{$convert-base}rem, #{$convert-base}vw + #{$convert-base}rem, #{$convert-max}rem);
+        --fs-#{$i}: clamp(#{$convert-base}em, #{$convert-base}vw + #{$convert-base}em, #{$convert-max}em);
     }
 
     //: Border
