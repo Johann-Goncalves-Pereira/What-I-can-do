@@ -2,7 +2,7 @@ module Pages.Home_ exposing (Model, Msg, page)
 
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route exposing (Route)
-import Html exposing (Html, a, article, b, br, button, div, em, h1, h2, h3, img, main_, p, section, span, strong, text)
+import Html exposing (Html, a, article, b, br, button, div, em, h1, h2, h3, img, input, main_, p, section, span, strong, text)
 import Html.Attributes exposing (attribute, class, id, src, style)
 import Html.Events exposing (onClick)
 import Page exposing (Page)
@@ -76,17 +76,23 @@ view model =
                 [ button [ class "shallow--up btm" ] [ ESvg.home ESvg.SvgInvertArrows ]
                 , button [ class "shallow--up btm" ] [ ESvg.home ESvg.SvgPlus ]
                 ]
-            , div [ class "ctnr__btm--fr" ]
-                [ button [ class "shallow--up btm" ] [ ESvg.home <| ESvg.SvgArrow ESvg.Right ]
-                , button [ class "shallow--up btm" ] [ ESvg.home <| ESvg.SvgArrow ESvg.Left ]
-                , button [ class "shallow--up btm" ] [ ESvg.home ESvg.SvgFlag ]
+            , section [ class "ctnr__btm--fc" ]
+                [ div [ class "ctnr__search-bar shallow--up" ]
+                    [ input [ class "input" ] []
+                    , button [ class "btm" ] [ ESvg.home ESvg.SvgMagnifyingGlass ]
+                    ]
+                , div [ class "ctnr__btm--fr" ]
+                    [ button [ class "shallow--up btm" ] [ ESvg.home <| ESvg.SvgArrow ESvg.Right ]
+                    , button [ class "shallow--up btm" ] [ ESvg.home <| ESvg.SvgArrow ESvg.Left ]
+                    , button [ class "shallow--up btm" ] [ ESvg.home ESvg.SvgFlag ]
+                    ]
                 ]
             , section [ class "shallow--down ctnr__btm--fr line-btm" ]
                 [ button [ class "line-btm__btm" ] [ ESvg.home ESvg.SvgDollar ]
                 , button [ class "line-btm__btm" ] [ ESvg.home ESvg.SvgPerson ]
                 , button [ class "line-btm__btm" ] [ ESvg.home ESvg.SvgShoppingCart ]
                 , button [ class "line-btm__btm" ] [ ESvg.home ESvg.SvgInformation ]
-                , button [ class "line-btm__btm shallow--up btm" ] [ em [] [ text "Change" ] ]
+                , button [ class "shallow--up btm" ] [ em [] [ text "Change" ] ]
                 ]
 
             -- , section [ class "shallow--up" ] []
