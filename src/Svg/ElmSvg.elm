@@ -55,6 +55,7 @@ type HomeSvg
     | SvgPerson
     | SvgShoppingCart
     | SvgInformation
+    | SvgMagnifyingGlass
 
 
 home : HomeSvg -> Html msg
@@ -201,4 +202,26 @@ home homeSvg =
                     ]
                     []
                 , gradientApplication
+                ]
+
+        SvgMagnifyingGlass ->
+            svg [ width "18", height "18", viewBox "0 0 18 18", fill "none" ]
+                [ Svg.path
+                    [ d "M14.8182 8.15389C14.8182 11.7686 11.8875 14.6992 8.27287 14.6992C4.65687 14.6992 1.72754 11.7686 1.72754 8.15389C1.72754 4.53922 4.65687 1.60855 8.27287 1.60855C11.8875 1.60855 14.8182 4.53922 14.8182 8.15389Z"
+                    , stroke <| fillColor Text
+                    , strokeWidth "1.88933"
+                    , strokeMiterlimit "10"
+                    , strokeLinecap "round"
+                    , strokeLinejoin "round"
+                    ]
+                    []
+                , Svg.path
+                    [ d "M16.4693 16.3818L12.876 12.7885"
+                    , stroke <| fillColor Text
+                    , strokeWidth "1.88933"
+                    , strokeMiterlimit "10"
+                    , strokeLinecap "round"
+                    , strokeLinejoin "round"
+                    ]
+                    []
                 ]
