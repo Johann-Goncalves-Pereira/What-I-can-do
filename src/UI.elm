@@ -1,10 +1,50 @@
-module UI exposing (layout)
+module UI exposing (PageModel, layout, pageConfig)
 
+import Array
 import Gen.Route as Route exposing (Route)
-import Html exposing (Html, a, button, header, li, main_, nav, text, ul)
-import Html.Attributes exposing (class, classList, href)
-import Platform exposing (Router)
-import Svg.ElmSvg as ESvg
+import Html exposing (Attribute, Html, a, div, header, main_, nav, text)
+import Html.Attributes exposing (class, classList, href, id, tabindex)
+import Regex
+
+
+
+-- Model
+
+
+type alias PageModel msg =
+    { route : Route
+    , mainContent : List (Html msg)
+    , mainAttrs : List (Attribute msg)
+    }
+
+
+type alias Link =
+    { routeStatic : Route
+    , routeReceived : Route
+    , routeName : String
+    , hasMarginLeft : Bool
+    }
+
+
+pageConfig : PageModel msg
+pageConfig =
+    { route = Route.Home_
+    , mainContent = []
+    , mainAttrs = []
+    }
+
+
+defaultLink : Link
+defaultLink =
+    { routeStatic = Route.Home_
+    , routeReceived = Route.Home_
+    , routeName = ""
+    , hasMarginLeft = False
+    }
+
+
+
+-- Structure
 
 
 isRoute : Route -> Route -> Bool
@@ -17,31 +57,115 @@ isRoute route compare =
             False
 
 
-layout : Route -> String -> List (Html msg) -> List (Html msg)
-layout route pageName content =
+caseNamePage : Route -> String
+caseNamePage route =
+    case route of
+        Route.Home_ ->
+            "Home"
+
+        Route.About ->
+            "About"
+
+        Route.NotFound ->
+            "Not Found"
+
+
+userReplace : String -> (Regex.Match -> String) -> String -> String
+userReplace userRegex replacer string =
+    case Regex.fromString userRegex of
+        Nothing ->
+            string
+
+        Just regex ->
+            Regex.replace regex replacer string
+
+
+classBuilder : String -> String
+classBuilder string =
+    userReplace "[ ]" (\_ -> "-") string
+        |> String.toLower
+
+
+
+-- View
+
+
+layout : PageModel msg -> List (Html msg)
+layout model =
     let
-        viewLink : String -> Route -> Html msg
-        viewLink label routes =
-            li [ class "main-header__list__item" ]
-                [ a
-                    [ href <| Route.toHref routes
-                    , classList
-                        [ ( "main-header__list__item__links", True )
-                        , ( "main-header__list__item__links--current-page"
-                          , isRoute route routes
-                          )
-                        ]
-                    ]
-                    [ text label ]
-                , ESvg.twoArrows ESvg.Text
-                ]
+        mainClass : Attribute msg
+        mainClass =
+            class <| "main--" ++ classBuilder (caseNamePage model.route)
     in
-    [ header [ class "main-header" ]
-        [ nav [ class "main-header__nav" ]
-            [ viewLink "Home" Route.Home_
-            , ul [ class "main-header__list" ]
-                []
-            ]
+    [ div
+        [ id "root"
+        , placeholderStyles 0
+        , classList [ ( "scroll", True ), ( "root--" ++ classBuilder (caseNamePage model.route), True ) ]
         ]
-    , main_ [ class <| "main--" ++ pageName ] content
+        [ viewHeader model
+        , main_ (mainClass :: model.mainAttrs) model.mainContent
+        ]
     ]
+
+
+viewHeader : PageModel msg -> Html msg
+viewHeader model =
+    header [ class "main-header" ]
+        [ viewHeaderLinks model [ Route.Home_, Route.About ]
+            |> nav
+                [ class "main-header__nav"
+                , placeholderStyles 1
+                ]
+        ]
+
+
+viewHeaderLinks : PageModel msg -> List Route -> List (Html msg)
+viewHeaderLinks model links =
+    List.map
+        (\staticRoute ->
+            viewLink
+                { defaultLink
+                    | routeName = caseNamePage staticRoute
+                    , routeStatic = staticRoute
+                    , routeReceived = model.route
+                }
+        )
+        links
+
+
+viewLink : Link -> Html msg
+viewLink model =
+    a
+        [ class "main-header__links"
+        , placeholderStyles 2
+        , classList
+            [ ( "main-header__links--current-page"
+              , isRoute model.routeReceived model.routeStatic
+              )
+            , ( "main-header__links--margin-left", model.hasMarginLeft )
+            ]
+        , href <| Route.toHref model.routeStatic
+        , tabindex 1
+        ]
+        [ text model.routeName ]
+
+
+placeholderStyles : Int -> Attribute msg
+placeholderStyles index =
+    let
+        listOfStyles : List (Attribute msg)
+        listOfStyles =
+            [ class "grid grid-rows-[min-content,auto] gap-8"
+            , class "flex justify-center gap-4 text-2xl bg-surface-1 shadow-inner"
+            , class "p-4 font-semibold md:p-8"
+            ]
+
+        arrayOfStyles : Array.Array (Attribute msg)
+        arrayOfStyles =
+            Array.fromList listOfStyles
+
+        getStyle : Maybe (Attribute msg)
+        getStyle =
+            Array.get index arrayOfStyles
+    in
+    Maybe.withDefault (class "error") getStyle
