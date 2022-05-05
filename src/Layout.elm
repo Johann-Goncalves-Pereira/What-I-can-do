@@ -1,4 +1,4 @@
-module UI exposing (PageModel, layout, pageConfig)
+module Layout exposing (PageModel, layout, pageConfig)
 
 import Array
 import Gen.Route as Route exposing (Route)
@@ -15,6 +15,7 @@ type alias PageModel msg =
     { route : Route
     , mainContent : List (Html msg)
     , mainAttrs : List (Attribute msg)
+    , extraPageComponent : Maybe (List (Html msg))
     }
 
 
@@ -31,6 +32,7 @@ pageConfig =
     { route = Route.Home_
     , mainContent = []
     , mainAttrs = []
+    , extraPageComponent = Nothing
     }
 
 
@@ -63,9 +65,6 @@ caseNamePage route =
         Route.Home_ ->
             "Home"
 
-        Route.About ->
-            "About"
-
         Route.NotFound ->
             "Not Found"
 
@@ -97,24 +96,31 @@ layout model =
         mainClass =
             class <| "main--" ++ classBuilder (caseNamePage model.route)
     in
-    [ div
-        [ id "root"
-        , placeholderStyles 0
-        , classList [ ( "scroll", True ), ( "root--" ++ classBuilder (caseNamePage model.route), True ) ]
-        ]
-        [ viewHeader model
-        , main_ (mainClass :: model.mainAttrs) model.mainContent
-        ]
+    [ [ viewHeader model
+      , main_ (mainClass :: model.mainAttrs) model.mainContent
+      ]
+        ++ Maybe.withDefault [] model.extraPageComponent
+        |> div
+            [ id "root"
+            , classList
+                [ ( "scroll", True )
+                , ( String.concat
+                        [ "root--"
+                        , classBuilder <| caseNamePage model.route
+                        ]
+                  , True
+                  )
+                ]
+            ]
     ]
 
 
 viewHeader : PageModel msg -> Html msg
 viewHeader model =
-    header [ class "main-header" ]
-        [ viewHeaderLinks model [ Route.Home_, Route.About ]
+    header [ class "root__header" ]
+        [ viewHeaderLinks model [ Route.Home_ ]
             |> nav
-                [ class "main-header__nav"
-                , placeholderStyles 1
+                [ class "root__header__nav"
                 ]
         ]
 
@@ -136,36 +142,14 @@ viewHeaderLinks model links =
 viewLink : Link -> Html msg
 viewLink model =
     a
-        [ class "main-header__links"
-        , placeholderStyles 2
+        [ class "root__header__links"
         , classList
-            [ ( "main-header__links--current-page"
+            [ ( "root__header__links--current-page"
               , isRoute model.routeReceived model.routeStatic
               )
-            , ( "main-header__links--margin-left", model.hasMarginLeft )
+            , ( "root__header__links--margin-left", model.hasMarginLeft )
             ]
         , href <| Route.toHref model.routeStatic
         , tabindex 1
         ]
         [ text model.routeName ]
-
-
-placeholderStyles : Int -> Attribute msg
-placeholderStyles index =
-    let
-        listOfStyles : List (Attribute msg)
-        listOfStyles =
-            [ class "grid grid-rows-[min-content,auto] gap-8"
-            , class "flex justify-center gap-4 text-2xl bg-surface-1 shadow-inner"
-            , class "p-4 font-semibold md:p-8"
-            ]
-
-        arrayOfStyles : Array.Array (Attribute msg)
-        arrayOfStyles =
-            Array.fromList listOfStyles
-
-        getStyle : Maybe (Attribute msg)
-        getStyle =
-            Array.get index arrayOfStyles
-    in
-    Maybe.withDefault (class "error") getStyle
