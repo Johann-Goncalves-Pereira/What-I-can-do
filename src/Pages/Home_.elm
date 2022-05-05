@@ -58,10 +58,16 @@ update msg model =
 view : Model -> View Msg
 view model =
     { title = "Home"
-    , body =
-        Layout.layout
-            { pageConfig
-                | route = Route.Home_
-                , mainContent = []
-            }
+    , body = viewLayout model
     }
+
+
+viewLayout : Model -> List (Html Msg)
+viewLayout model =
+    Layout.layout
+        { pageConfig
+            | route = Route.Home_
+            , mainContent = []
+        }
+
+
