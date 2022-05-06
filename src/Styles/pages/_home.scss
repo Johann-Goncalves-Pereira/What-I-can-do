@@ -1,5 +1,55 @@
+@use "sass:math" as *;
+
 .main--home {
-	height: calc(100vh - var(--header-height));
-	width: 100%;
-	// background-color: var(--clr-surface-5);
+	$max-width: 80rem;
+	$base-padding: 2rem;
+
+	width: Min(100% - $base-padding, $max-width);
+	margin-inline: auto;
+
+	.intro {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		place-content: center;
+		gap: 2rem;
+
+		height: calc(100vh - var(--header-height));
+
+		&__title {
+			// $typing-length: var(--typing-length, 8ch);
+			$cursor-adjust: 0px;
+
+			position: relative;
+
+			font-size: 4rem;
+			font-weight: 600;
+
+			white-space: nowrap;
+			overflow-x: hidden;
+			width: fit-content;
+			// width: calc($typing-length + $cursor-adjust);
+
+			&::before {
+				content: "";
+				position: absolute;
+				inset-block: 0;
+				right: 0;
+				// left: calc($typing-length + $cursor-adjust - 2);
+				width: 2px;
+				background-color: var(--clr-brand-0);
+				// animation: blink 850ms ease infinite;
+			}
+		}
+	}
+
+	@keyframes blink {
+		0%,
+		100% {
+			background-color: var(--clr-brand-0);
+		}
+		25%,
+		75% {
+			background-color: var(--clr-surface-0);
+		}
+	}
 }
