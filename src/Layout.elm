@@ -2,7 +2,7 @@ module Layout exposing (PageModel, layout, pageConfig)
 
 import Array
 import Gen.Route as Route exposing (Route)
-import Html exposing (Attribute, Html, a, div, header, main_, nav, text)
+import Html exposing (Attribute, Html, a, div, header, li, main_, nav, text, ul)
 import Html.Attributes exposing (class, classList, href, id, tabindex)
 import Regex
 
@@ -23,7 +23,6 @@ type alias Link =
     { routeStatic : Route
     , routeReceived : Route
     , routeName : String
-    , hasMarginLeft : Bool
     }
 
 
@@ -41,7 +40,6 @@ defaultLink =
     { routeStatic = Route.Home_
     , routeReceived = Route.Home_
     , routeName = ""
-    , hasMarginLeft = False
     }
 
 
@@ -115,13 +113,18 @@ layout model =
     ]
 
 
+headerClass : String
+headerClass =
+    "root__header"
+
+
 viewHeader : PageModel msg -> Html msg
 viewHeader model =
-    header [ class "root__header" ]
-        [ viewHeaderLinks model [ Route.Home_ ]
-            |> nav
-                [ class "root__header__nav"
-                ]
+    header [ class headerClass, id headerClass ]
+        [ nav [ class <| headerClass ++ "__nav" ]
+            [ ul [ class <| headerClass ++ "__ul" ] <|
+                viewHeaderLinks model [ Route.Home_ ]
+            ]
         ]
 
 
@@ -141,15 +144,21 @@ viewHeaderLinks model links =
 
 viewLink : Link -> Html msg
 viewLink model =
-    a
-        [ class "root__header__links"
-        , classList
-            [ ( "root__header__links--current-page"
-              , isRoute model.routeReceived model.routeStatic
-              )
-            , ( "root__header__links--margin-left", model.hasMarginLeft )
+    let
+        linkClass : String
+        linkClass =
+            headerClass ++ "__link"
+    in
+    li [ class <| headerClass ++ "__item" ]
+        [ a
+            [ class linkClass
+            , classList
+                [ ( linkClass ++ "--current-page"
+                  , isRoute model.routeReceived model.routeStatic
+                  )
+                ]
+            , href <| Route.toHref model.routeStatic
+            , tabindex 1
             ]
-        , href <| Route.toHref model.routeStatic
-        , tabindex 1
+            [ text model.routeName ]
         ]
-        [ text model.routeName ]

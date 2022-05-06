@@ -1,0 +1,30 @@
+.root__header {
+	height: 3rem;
+
+	:where(&__nav, &__ul, &__item, &__link) {
+		height: inherit;
+	}
+
+	&__nav {
+		$max-width: 80rem;
+		$padding: 2rem;
+
+		margin-inline: auto;
+		width: Min(100% - $padding, $max-width);
+	}
+
+	&__ul {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		place-content: center;
+		gap: 0.5rem;
+	}
+
+	&__item {
+	}
+
+	&__link {
+		display: grid;
+		place-content: center;
+	}
+}
