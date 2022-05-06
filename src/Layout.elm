@@ -120,7 +120,7 @@ headerClass =
 
 viewHeader : PageModel msg -> Html msg
 viewHeader model =
-    header [ class headerClass ]
+    header [ class headerClass, id headerClass ]
         [ nav [ class <| headerClass ++ "__nav" ]
             [ ul [ class <| headerClass ++ "__ul" ] <|
                 viewHeaderLinks model [ Route.Home_ ]
