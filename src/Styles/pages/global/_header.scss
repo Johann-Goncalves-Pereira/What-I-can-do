@@ -1,4 +1,5 @@
 .root__header {
+	$compensation: 2rem;
 	height: 3rem;
 
 	:where(&__nav, &__ul, &__item, &__link) {
@@ -10,7 +11,7 @@
 		$padding: 2rem;
 
 		margin-inline: auto;
-		width: Min(100% - $padding, $max-width);
+		width: Min(100%, $max-width + $compensation * 2);
 	}
 
 	&__ul {
@@ -26,5 +27,6 @@
 	&__link {
 		display: grid;
 		place-content: center;
+		padding-inline: $compensation;
 	}
 }

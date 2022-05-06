@@ -106,10 +106,10 @@ update msg model =
             ( { model | titleIndex = index }, Cmd.none )
 
         RandomTimeTyping ->
-            ( model, Random.generate NewTimeTyping (Random.float 2 6) )
+            ( model, Random.generate NewTimeTyping (Random.float 1 4) )
 
         NewTimeTyping t ->
-            ( { model | typingRandomTime = floorNumCom 3 t }, Cmd.none )
+            ( { model | typingRandomTime = t }, Cmd.none )
 
         ChangeTimerState ts ->
             case ts of
@@ -149,13 +149,21 @@ run m =
 
 subs : Model -> Sub Msg
 subs model =
+    let
+        eraserPace =
+            if model.timePass < 3 then
+                4
+
+            else
+                1
+    in
     Sub.batch
         [ case model.timerState of
             TimerGoingUp ->
                 Time.every (60 * model.typingRandomTime) (\_ -> TypingTimeAdd)
 
             TimerGoingDown ->
-                Time.every (60 * model.typingRandomTime) (\_ -> TypingTimeSub)
+                Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
         , Time.every (60 * 10) (\_ -> RandomTimeTyping)
         ]
 
@@ -192,9 +200,6 @@ introTitles : List String
 introTitles =
     [ "Hello, world!"
     , "Hello, universe!"
-    , "Hello, universe and everything!"
-    , "Hello, universe and everything and everything!"
-    , "Hello, universe and everything and everything and everything!"
     , "Hello, universe and everything and everything and everything and everything!"
     ]
 
