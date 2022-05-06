@@ -1,4 +1,4 @@
-module Layout exposing (PageModel, layout, pageConfig)
+module Layout exposing (PageModel, layout, pageConfig, headerClass)
 
 import Array
 import Gen.Route as Route exposing (Route)

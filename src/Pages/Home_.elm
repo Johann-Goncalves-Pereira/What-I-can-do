@@ -1,17 +1,18 @@
-module Pages.Home_ exposing (Model, Msg, page)
+module Pages.Home_ exposing (Model, Msg, page, subs)
 
 import Array exposing (Array)
 import Browser.Dom as BrowserDom exposing (Element, Error)
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Html, a, div, h1, h2, h5, section, text)
-import Html.Attributes exposing (class, href, id, rel, tabindex, target)
+import Html exposing (Html, a, div, h1, h2, h5, p, section, span, text)
+import Html.Attributes exposing (class, href, id, rel, style, tabindex, target)
 import Html.Attributes.Aria exposing (ariaLabel, ariaLabelledby)
-import Layout exposing (pageConfig)
+import Layout exposing (headerClass, pageConfig)
 import Page
 import Platform exposing (Task)
 import Random
 import Request
+import Round exposing (floorNumCom)
 import Shared
 import Svg exposing (desc)
 import Task
@@ -35,23 +36,37 @@ page shared req =
 
 
 type alias Model =
-    { headerSize : Int
+    { -- Header
+      headerSize : Int
+
+    -- Title
     , titleIndex : Int
+
+    -- Typing Title
     , timePass : Int
+    , typingRandomTime : Float
+    , timerState : TimerState
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { headerSize = 64
+    ( { headerSize = 18
       , titleIndex = 0
       , timePass = 0
+      , typingRandomTime = 10
+      , timerState = TimerGoingUp
       }
     , Cmd.batch
-        [ BrowserDom.getElement "root__header" |> Task.attempt GotHeader
+        [ BrowserDom.getElement headerClass |> Task.attempt GotHeader
         , run GetTitle
         ]
     )
+
+
+type TimerState
+    = TimerGoingUp
+    | TimerGoingDown
 
 
 
@@ -64,8 +79,13 @@ type Msg
       -- Title
     | GetTitle
     | NewTitle Int
-      -- Typing
-    | TypingTime
+      -- Typing Time
+    | RandomTimeTyping
+    | NewTimeTyping Float
+    | ChangeTimerState TimerState
+      -- Typing Title
+    | TypingTimeAdd
+    | TypingTimeSub
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -85,8 +105,37 @@ update msg model =
         NewTitle index ->
             ( { model | titleIndex = index }, Cmd.none )
 
-        TypingTime ->
-            ( { model | timePass = model.timePass + 1 }, Cmd.none )
+        RandomTimeTyping ->
+            ( model, Random.generate NewTimeTyping (Random.float 2 6) )
+
+        NewTimeTyping t ->
+            ( { model | typingRandomTime = floorNumCom 3 t }, Cmd.none )
+
+        ChangeTimerState ts ->
+            case ts of
+                TimerGoingUp ->
+                    ( { model | timerState = TimerGoingDown }, Cmd.none )
+
+                TimerGoingDown ->
+                    ( { model | timerState = TimerGoingUp }, Cmd.none )
+
+        TypingTimeAdd ->
+            if model.timePass < getTitleChAmount model then
+                ( { model | timePass = model.timePass + 1 }
+                , Cmd.none
+                )
+
+            else
+                ( model, run <| ChangeTimerState model.timerState )
+
+        TypingTimeSub ->
+            if model.timePass > 0 then
+                ( { model | timePass = model.timePass - 1 }
+                , Cmd.none
+                )
+
+            else
+                ( model, run <| ChangeTimerState model.timerState )
 
 
 run : Msg -> Cmd Msg
@@ -100,7 +149,15 @@ run m =
 
 subs : Model -> Sub Msg
 subs model =
-    Time.every 60 (\_ -> TypingTime)
+    Sub.batch
+        [ case model.timerState of
+            TimerGoingUp ->
+                Time.every (60 * model.typingRandomTime) (\_ -> TypingTimeAdd)
+
+            TimerGoingDown ->
+                Time.every (60 * model.typingRandomTime) (\_ -> TypingTimeSub)
+        , Time.every (60 * 10) (\_ -> RandomTimeTyping)
+        ]
 
 
 
@@ -142,28 +199,29 @@ introTitles =
     ]
 
 
+getPossibleTitles : Int -> String
+getPossibleTitles index =
+    Array.fromList introTitles
+        |> Array.get index
+        |> Maybe.withDefault "Hi, I am a robot!"
+
+
+getTitleChAmount : Model -> Int
+getTitleChAmount model =
+    getPossibleTitles model.titleIndex
+        |> String.length
+
+
 viewIntro : Model -> Html Msg
 viewIntro model =
     let
-        nameHeader : String
-        nameHeader =
-            "intro-head"
-
-        getPossibleTitles : Int -> String
-        getPossibleTitles index =
-            Array.fromList introTitles
-                |> Array.get index
-                |> Maybe.withDefault "Hi, I am a robot!"
-
         slicer : Int -> Int -> String
         slicer index typing =
             getPossibleTitles index
                 |> String.slice 0 typing
     in
-    section [ class "intro", ariaLabelledby nameHeader ]
-        [ h1 [ class "intro__title", id nameHeader ]
-            [ slicer model.titleIndex 50
-                |> text
+    section [ class "intro" ]
+        [ h1 [ class "intro__title", ariaLabel <| getPossibleTitles model.titleIndex ]
+            [ text <| slicer model.titleIndex model.timePass
             ]
-        , text <| String.fromInt model.timePass
         ]
