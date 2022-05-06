@@ -1,16 +1,17 @@
 .root__header {
-	height: 3rem;
+	$compensation: 2rem;
+	height: 5rem;
 
 	:where(&__nav, &__ul, &__item, &__link) {
 		height: inherit;
 	}
 
 	&__nav {
-		$max-width: 80rem;
-		$padding: 2rem;
+		$max-width: 110rem;
+		$padding: 4rem;
 
 		margin-inline: auto;
-		width: Min(100% - $padding, $max-width);
+		width: Min(100%, $max-width + $compensation * 2);
 	}
 
 	&__ul {
@@ -26,5 +27,9 @@
 	&__link {
 		display: grid;
 		place-content: center;
+		padding-inline: $compensation;
+
+		font-size: 1.5rem;
+		font-weight: 500;
 	}
 }
