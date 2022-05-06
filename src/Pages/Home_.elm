@@ -7,6 +7,7 @@ import Gen.Route as Route
 import Html exposing (Html, a, div, h1, h2, h5, p, section, span, text)
 import Html.Attributes exposing (class, href, id, rel, style, tabindex, target)
 import Html.Attributes.Aria exposing (ariaLabel, ariaLabelledby)
+import Html.Events exposing (onClick)
 import Layout exposing (headerClass, pageConfig)
 import Page
 import Platform exposing (Task)
@@ -39,13 +40,12 @@ type alias Model =
     { -- Header
       headerSize : Int
 
-    -- Title
-    , titleIndex : Int
-
     -- Typing Title
-    , timePass : Int
-    , typingRandomTime : Float
+    , titleIndex : Int
+    , typingTimeChar : Int
+    , typingRandomPace : Float
     , timerState : TimerState
+    , typingReset : Bool
     }
 
 
@@ -53,37 +53,42 @@ init : ( Model, Cmd Msg )
 init =
     ( { headerSize = 18
       , titleIndex = 0
-      , timePass = 0
-      , typingRandomTime = 10
+      , typingTimeChar = 0
+      , typingRandomPace = 10
       , timerState = TimerGoingUp
+      , typingReset = False
       }
     , Cmd.batch
-        [ BrowserDom.getElement headerClass |> Task.attempt GotHeader
-        , run GetTitle
+        [ BrowserDom.getElement headerClass
+            |> Task.attempt GotHeader
+
+        -- , run GetTitle
         ]
     )
-
-
-type TimerState
-    = TimerGoingUp
-    | TimerGoingDown
 
 
 
 -- UPDATE
 
 
+type TimerState
+    = TimerGoingUp
+    | TimerGoingDown
+    | TimerBridge Bool
+    | TimerReset
+    | TimerStop
+
+
 type Msg
     = -- Header
       GotHeader (Result Error Element)
       -- Title
-    | GetTitle
-    | NewTitle Int
+      -- | GetTitle
+      -- | NewTitle Int
       -- Typing Time
-    | RandomTimeTyping
-    | NewTimeTyping Float
+    | RandomTypingPace
+    | NewTypingPace Float
     | ChangeTimerState TimerState
-      -- Typing Title
     | TypingTimeAdd
     | TypingTimeSub
 
@@ -97,40 +102,84 @@ update msg model =
                     ( model, Cmd.none )
 
                 Ok element ->
-                    ( { model | headerSize = round element.element.height }, Cmd.none )
+                    ( { model | headerSize = round element.element.height }
+                    , Cmd.none
+                    )
 
-        GetTitle ->
-            ( model, Random.generate NewTitle (Random.int 0 <| List.length introTitles - 1) )
+        -- GetTitle ->
+        --     ( model, Random.generate NewTitle (Random.int 0 <| List.length introTitles - 1) )
+        -- NewTitle index ->
+        --     ( { model | titleIndex = index }, Cmd.none )
+        RandomTypingPace ->
+            ( model, Random.generate NewTypingPace (Random.float 1 4) )
 
-        NewTitle index ->
-            ( { model | titleIndex = index }, Cmd.none )
-
-        RandomTimeTyping ->
-            ( model, Random.generate NewTimeTyping (Random.float 1 4) )
-
-        NewTimeTyping t ->
-            ( { model | typingRandomTime = t }, Cmd.none )
+        NewTypingPace t ->
+            ( { model | typingRandomPace = t }, Cmd.none )
 
         ChangeTimerState ts ->
+            let
+                checkIfListOfTitlesIsFull =
+                    model.titleIndex >= List.length introTitles - 1 && model.typingReset == False
+
+                stopTyping timingState =
+                    if checkIfListOfTitlesIsFull then
+                        TimerStop
+
+                    else
+                        timingState
+            in
             case ts of
                 TimerGoingUp ->
-                    ( { model | timerState = TimerGoingDown }, Cmd.none )
+                    ( { model | timerState = stopTyping TimerGoingDown }, Cmd.none )
 
                 TimerGoingDown ->
-                    ( { model | timerState = TimerGoingUp }, Cmd.none )
+                    ( { model | timerState = TimerBridge model.typingReset }, Cmd.none )
+
+                TimerBridge reset ->
+                    let
+                        timeReset =
+                            if reset then
+                                0
+
+                            else
+                                model.titleIndex + 1
+                    in
+                    ( { model
+                        | timerState = stopTyping TimerGoingUp
+                        , titleIndex = timeReset
+                        , typingReset = False
+                      }
+                    , Cmd.none
+                    )
+
+                TimerReset ->
+                    ( { model
+                        | timerState = TimerBridge True
+                        , typingReset = True
+                      }
+                    , Cmd.none
+                    )
+
+                TimerStop ->
+                    ( model, Cmd.none )
 
         TypingTimeAdd ->
-            if model.timePass < getTitleChAmount model then
-                ( { model | timePass = model.timePass + 1 }
+            if model.typingTimeChar < getTitleChAmount model - 1 then
+                ( { model | typingTimeChar = model.typingTimeChar + 1 }
                 , Cmd.none
+                )
+
+            else if model.typingTimeChar < getTitleChAmount model then
+                ( { model | typingTimeChar = model.typingTimeChar + 1 }
+                , run <| ChangeTimerState model.timerState
                 )
 
             else
                 ( model, run <| ChangeTimerState model.timerState )
 
         TypingTimeSub ->
-            if model.timePass > 0 then
-                ( { model | timePass = model.timePass - 1 }
+            if model.typingTimeChar > 0 then
+                ( { model | typingTimeChar = model.typingTimeChar - 1 }
                 , Cmd.none
                 )
 
@@ -138,7 +187,7 @@ update msg model =
                 ( model, run <| ChangeTimerState model.timerState )
 
 
-run : Msg -> Cmd Msg
+run : msg -> Cmd msg
 run m =
     Task.perform (always m) (Task.succeed ())
 
@@ -151,8 +200,11 @@ subs : Model -> Sub Msg
 subs model =
     let
         eraserPace =
-            if model.timePass < 3 then
+            if model.typingTimeChar < 3 then
                 4
+
+            else if model.typingTimeChar == getTitleChAmount model then
+                model.typingRandomPace * 4
 
             else
                 1
@@ -160,11 +212,20 @@ subs model =
     Sub.batch
         [ case model.timerState of
             TimerGoingUp ->
-                Time.every (60 * model.typingRandomTime) (\_ -> TypingTimeAdd)
+                Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
 
             TimerGoingDown ->
                 Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
-        , Time.every (60 * 10) (\_ -> RandomTimeTyping)
+
+            TimerBridge _ ->
+                Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeSub)
+
+            TimerReset ->
+                Sub.none
+
+            TimerStop ->
+                Sub.none
+        , Time.every (60 * 10) (\_ -> RandomTypingPace)
         ]
 
 
@@ -198,9 +259,11 @@ viewLayout model =
 
 introTitles : List String
 introTitles =
-    [ "Hello, world!"
-    , "Hello, universe!"
-    , "Hello, universe and everything and everything and everything and everything!"
+    [ "Eu adoro jabuticaba"
+
+    -- , "Isso é uma mentira"
+    -- , "Porem adoro chorocale"
+    , "Verdadeiro"
     ]
 
 
@@ -226,7 +289,11 @@ viewIntro model =
                 |> String.slice 0 typing
     in
     section [ class "intro" ]
-        [ h1 [ class "intro__title", ariaLabel <| getPossibleTitles model.titleIndex ]
-            [ text <| slicer model.titleIndex model.timePass
+        [ h1
+            [ class "intro__title"
+            , ariaLabel <| getPossibleTitles model.titleIndex
+            , onClick <| ChangeTimerState TimerReset
+            ]
+            [ text <| slicer model.titleIndex model.typingTimeChar
             ]
         ]
