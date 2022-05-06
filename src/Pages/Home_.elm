@@ -106,12 +106,8 @@ update msg model =
                     , Cmd.none
                     )
 
-        -- GetTitle ->
-        --     ( model, Random.generate NewTitle (Random.int 0 <| List.length introTitles - 1) )
-        -- NewTitle index ->
-        --     ( { model | titleIndex = index }, Cmd.none )
         RandomTypingPace ->
-            ( model, Random.generate NewTypingPace (Random.float 1 4) )
+            ( model, Random.generate NewTypingPace (Random.float 1 3) )
 
         NewTypingPace t ->
             ( { model | typingRandomPace = t }, Cmd.none )
@@ -164,12 +160,12 @@ update msg model =
                     ( model, Cmd.none )
 
         TypingTimeAdd ->
-            if model.typingTimeChar < getTitleChAmount model - 1 then
+            if model.typingTimeChar < getTitleCharAmount model - 1 then
                 ( { model | typingTimeChar = model.typingTimeChar + 1 }
                 , Cmd.none
                 )
 
-            else if model.typingTimeChar < getTitleChAmount model then
+            else if model.typingTimeChar < getTitleCharAmount model then
                 ( { model | typingTimeChar = model.typingTimeChar + 1 }
                 , run <| ChangeTimerState model.timerState
                 )
@@ -203,8 +199,8 @@ subs model =
             if model.typingTimeChar < 3 then
                 4
 
-            else if model.typingTimeChar == getTitleChAmount model then
-                model.typingRandomPace * 4
+            else if model.typingTimeChar == getTitleCharAmount model then
+                8
 
             else
                 1
@@ -212,20 +208,22 @@ subs model =
     Sub.batch
         [ case model.timerState of
             TimerGoingUp ->
-                Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
+                Sub.batch
+                    [ Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
+                    , Time.every (60 * 10) (\_ -> RandomTypingPace)
+                    ]
 
             TimerGoingDown ->
                 Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
 
             TimerBridge _ ->
-                Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeSub)
+                Time.every (60 * 0) (\_ -> TypingTimeSub)
 
             TimerReset ->
                 Sub.none
 
             TimerStop ->
                 Sub.none
-        , Time.every (60 * 10) (\_ -> RandomTypingPace)
         ]
 
 
@@ -259,24 +257,24 @@ viewLayout model =
 
 introTitles : List String
 introTitles =
-    [ "Eu adoro jabuticaba"
-
-    -- , "Isso é uma mentira"
-    -- , "Porem adoro chorocale"
-    , "Verdadeiro"
+    [ "Hi, I'm Johann"
+    , "I'm a software developer"
+    , "I work at the web"
+    , "I Love Code, UI and Design"
+    , "So let's work together"
     ]
 
 
-getPossibleTitles : Int -> String
-getPossibleTitles index =
+getTitle : Int -> String
+getTitle index =
     Array.fromList introTitles
         |> Array.get index
         |> Maybe.withDefault "Hi, I am a robot!"
 
 
-getTitleChAmount : Model -> Int
-getTitleChAmount model =
-    getPossibleTitles model.titleIndex
+getTitleCharAmount : Model -> Int
+getTitleCharAmount model =
+    getTitle model.titleIndex
         |> String.length
 
 
@@ -285,13 +283,13 @@ viewIntro model =
     let
         slicer : Int -> Int -> String
         slicer index typing =
-            getPossibleTitles index
+            getTitle index
                 |> String.slice 0 typing
     in
     section [ class "intro" ]
         [ h1
             [ class "intro__title"
-            , ariaLabel <| getPossibleTitles model.titleIndex
+            , ariaLabel <| getTitle model.titleIndex
             , onClick <| ChangeTimerState TimerReset
             ]
             [ text <| slicer model.titleIndex model.typingTimeChar

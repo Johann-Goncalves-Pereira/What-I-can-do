@@ -1,15 +1,17 @@
 @use "sass:math" as *;
 
 .main--home {
-	$max-width: 80rem;
-	$base-padding: 2rem;
+	$max-width: 110rem;
+	$base-padding: 4rem;
 
 	width: Min(100% - $base-padding, $max-width);
+
 	margin-inline: auto;
 
 	.intro {
 		display: grid;
-		grid-template-columns: 2fr 1fr 1fr;
+		grid-template-columns: 2fr 1fr;
+		padding-bottom: var(--header-height);
 		place-content: center;
 		gap: 2rem;
 
@@ -18,12 +20,13 @@
 		&__title {
 			$cursor-adjust: 0px;
 
-			width: 100%;
+			width: fit-content;
 
 			font-size: 4rem;
 			font-weight: 600;
 
 			white-space: normal;
+			cursor: pointer;
 
 			&::after {
 				content: "";
