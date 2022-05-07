@@ -31,8 +31,8 @@
 			&::after {
 				content: "";
 				display: inline-block;
-				height: 1em;
-				width: 3px;
+				width: 0.1875rem;
+				margin-left: 0.125rem;
 				background-color: var(--clr-brand-0);
 				animation: blink 1000ms ease infinite;
 			}
