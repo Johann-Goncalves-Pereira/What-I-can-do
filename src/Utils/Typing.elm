@@ -1,36 +1,14 @@
-module Pages.Home_ exposing (Model, Msg, page, subs)
+module Utils.Typing exposing (..)
 
-import Array exposing (Array)
-import Browser.Dom as BrowserDom exposing (Element, Error)
-import Gen.Params.Home_ exposing (Params)
-import Gen.Route as Route
-import Html exposing (Html, a, div, h1, h2, h5, p, section, span, text)
-import Html.Attributes exposing (class, href, id, rel, style, tabindex, target)
-import Html.Attributes.Aria exposing (ariaLabel, ariaLabelledby)
+import Array
+import Html exposing (Attribute, Html, text)
+import Html.Attributes exposing (style)
+import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
-import Layout exposing (headerClass, pageConfig)
-import Page
-import Platform exposing (Task)
 import Random
-import Request
-import Round exposing (floorNumCom)
-import Shared
-import Svg exposing (desc)
-import Task
-import Time exposing (Posix, every, millisToPosix, posixToMillis)
+import Svg exposing (cursor)
+import Time
 import Utils.TaskBase exposing (run)
-import Utils.View exposing (customProps)
-import View exposing (View)
-
-
-page : Shared.Model -> Request.With Params -> Page.With Model Msg
-page shared req =
-    Page.element
-        { init = init
-        , update = update
-        , view = view
-        , subscriptions = subs
-        }
 
 
 
@@ -38,10 +16,7 @@ page shared req =
 
 
 type alias Model =
-    { -- Header
-      headerSize : Int
-
-    -- Typing Title
+    { titleList : List String
     , titleIndex : Int
     , typingTimeChar : Int
     , typingRandomPace : Float
@@ -50,20 +25,15 @@ type alias Model =
     }
 
 
-init : ( Model, Cmd Msg )
+init : Model
 init =
-    ( { headerSize = 18
-      , titleIndex = 0
-      , typingTimeChar = 0
-      , typingRandomPace = 10
-      , timerState = TimerGoingUp
-      , typingReset = False
-      }
-    , Cmd.batch
-        [ BrowserDom.getElement headerClass
-            |> Task.attempt GotHeader
-        ]
-    )
+    { titleList = []
+    , titleIndex = 0
+    , typingTimeChar = 0
+    , typingRandomPace = 10
+    , timerState = TimerGoingUp
+    , typingReset = False
+    }
 
 
 
@@ -79,13 +49,7 @@ type TimerState
 
 
 type Msg
-    = -- Header
-      GotHeader (Result Error Element)
-      -- Title
-      -- | GetTitle
-      -- | NewTitle Int
-      -- Typing Time
-    | RandomTypingPace
+    = RandomTypingPace
     | NewTypingPace Float
     | ChangeTimerState TimerState
     | TypingTimeAdd
@@ -95,16 +59,6 @@ type Msg
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GotHeader promiseResponse ->
-            case promiseResponse of
-                Err _ ->
-                    ( model, Cmd.none )
-
-                Ok element ->
-                    ( { model | headerSize = round element.element.height }
-                    , Cmd.none
-                    )
-
         RandomTypingPace ->
             ( model, Random.generate NewTypingPace (Random.float 1 3) )
 
@@ -114,7 +68,7 @@ update msg model =
         ChangeTimerState ts ->
             let
                 checkIfListOfTitlesIsFull =
-                    model.titleIndex >= List.length introTitles - 1 && model.typingReset == False
+                    model.titleIndex >= List.length model.titleList - 1 && model.typingReset == False
 
                 stopTyping timingState =
                     if checkIfListOfTitlesIsFull then
@@ -222,70 +176,37 @@ subs model =
 
 
 
--- every (toFloat (posixToMillis model.pos)) (always TypingTime)
 -- VIEW
 
 
-view : Model -> View Msg
-view model =
-    { title = "Home"
-    , body = viewLayout model
-    }
-
-
-viewLayout : Model -> List (Html Msg)
-viewLayout model =
-    Layout.layout
-        { pageConfig
-            | route = Route.Home_
-            , mainAttrs =
-                [ customProps
-                    [ { prop = "header-height"
-                      , value = String.fromInt model.headerSize ++ "px"
-                      }
-                    ]
-                ]
-            , mainContent = [ viewIntro model ]
-        }
-
-
-introTitles : List String
-introTitles =
-    [ "Hi, I'm Johann"
-    , "I'm a software developer"
-    , "I work at the web"
-    , "I Love Code, UI and Design"
-    , "So let's work together"
-    ]
-
-
-getTitle : Int -> String
-getTitle index =
-    Array.fromList introTitles
+getTitle : Model -> Int -> String
+getTitle model index =
+    Array.fromList model.titleList
         |> Array.get index
         |> Maybe.withDefault "Hi, I am a robot!"
 
 
 getTitleCharAmount : Model -> Int
 getTitleCharAmount model =
-    getTitle model.titleIndex
+    getTitle model model.titleIndex
         |> String.length
 
 
-viewIntro : Model -> Html Msg
-viewIntro model =
-    let
-        slicer : Int -> Int -> String
-        slicer index typing =
-            getTitle index
-                |> String.slice 0 typing
-    in
-    section [ class "intro" ]
-        [ h1
-            [ class "intro__title"
-            , ariaLabel <| getTitle model.titleIndex
-            , onClick <| ChangeTimerState TimerReset
-            ]
-            [ text <| slicer model.titleIndex model.typingTimeChar
-            ]
+slicer : Model -> Int -> Int -> String
+slicer model index typing =
+    getTitle model index
+        |> String.slice 0 typing
+
+
+
+-- Typing Component
+
+
+tc : Model -> (List (Attribute Msg) -> List (Html Msg) -> Html Msg) -> Html Msg
+tc model component =
+    component
+        [ ariaLabel <| getTitle model model.titleIndex
+        , onClick <| ChangeTimerState TimerReset
+        , style "cursor-pointer" "pointer"
         ]
+        [ text <| slicer model model.titleIndex model.typingTimeChar ]
