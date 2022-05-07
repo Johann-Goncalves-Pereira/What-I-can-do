@@ -19,6 +19,7 @@ import Svg exposing (desc)
 import Task
 import Time exposing (Posix, every, millisToPosix, posixToMillis)
 import Utils.TaskBase exposing (run)
+import Utils.Typing as Typing
 import Utils.View exposing (customProps)
 import View exposing (View)
 
@@ -40,24 +41,14 @@ page shared req =
 type alias Model =
     { -- Header
       headerSize : Int
-
-    -- Typing Title
-    , titleIndex : Int
-    , typingTimeChar : Int
-    , typingRandomPace : Float
-    , timerState : TimerState
-    , typingReset : Bool
+    , typingModel : Typing.Model
     }
 
 
 init : ( Model, Cmd Msg )
 init =
     ( { headerSize = 18
-      , titleIndex = 0
-      , typingTimeChar = 0
-      , typingRandomPace = 10
-      , timerState = TimerGoingUp
-      , typingReset = False
+      , typingModel = Typing.init
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
@@ -70,26 +61,10 @@ init =
 -- UPDATE
 
 
-type TimerState
-    = TimerGoingUp
-    | TimerGoingDown
-    | TimerBridge Bool
-    | TimerReset
-    | TimerStop
-
-
 type Msg
     = -- Header
       GotHeader (Result Error Element)
-      -- Title
-      -- | GetTitle
-      -- | NewTitle Int
-      -- Typing Time
-    | RandomTypingPace
-    | NewTypingPace Float
-    | ChangeTimerState TimerState
-    | TypingTimeAdd
-    | TypingTimeSub
+    | TypingMsg Typing.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -105,81 +80,14 @@ update msg model =
                     , Cmd.none
                     )
 
-        RandomTypingPace ->
-            ( model, Random.generate NewTypingPace (Random.float 1 3) )
-
-        NewTypingPace t ->
-            ( { model | typingRandomPace = t }, Cmd.none )
-
-        ChangeTimerState ts ->
+        TypingMsg typingMsg ->
             let
-                checkIfListOfTitlesIsFull =
-                    model.titleIndex >= List.length introTitles - 1 && model.typingReset == False
-
-                stopTyping timingState =
-                    if checkIfListOfTitlesIsFull then
-                        TimerStop
-
-                    else
-                        timingState
+                ( typingModel, typingCmd ) =
+                    Typing.update typingMsg model.typingModel
             in
-            case ts of
-                TimerGoingUp ->
-                    ( { model | timerState = stopTyping TimerGoingDown }, Cmd.none )
-
-                TimerGoingDown ->
-                    ( { model | timerState = TimerBridge model.typingReset }, Cmd.none )
-
-                TimerBridge reset ->
-                    let
-                        timeReset =
-                            if reset then
-                                0
-
-                            else
-                                model.titleIndex + 1
-                    in
-                    ( { model
-                        | timerState = stopTyping TimerGoingUp
-                        , titleIndex = timeReset
-                        , typingReset = False
-                      }
-                    , Cmd.none
-                    )
-
-                TimerReset ->
-                    ( { model
-                        | timerState = TimerBridge True
-                        , typingReset = True
-                      }
-                    , Cmd.none
-                    )
-
-                TimerStop ->
-                    ( model, Cmd.none )
-
-        TypingTimeAdd ->
-            if model.typingTimeChar < getTitleCharAmount model - 1 then
-                ( { model | typingTimeChar = model.typingTimeChar + 1 }
-                , Cmd.none
-                )
-
-            else if model.typingTimeChar < getTitleCharAmount model then
-                ( { model | typingTimeChar = model.typingTimeChar + 1 }
-                , run <| ChangeTimerState model.timerState
-                )
-
-            else
-                ( model, run <| ChangeTimerState model.timerState )
-
-        TypingTimeSub ->
-            if model.typingTimeChar > 0 then
-                ( { model | typingTimeChar = model.typingTimeChar - 1 }
-                , Cmd.none
-                )
-
-            else
-                ( model, run <| ChangeTimerState model.timerState )
+            ( { model | typingModel = typingModel }
+            , Cmd.map TypingMsg typingCmd
+            )
 
 
 
@@ -189,40 +97,13 @@ update msg model =
 subs : Model -> Sub Msg
 subs model =
     let
-        eraserPace =
-            if model.typingTimeChar < 3 then
-                4
-
-            else if model.typingTimeChar == getTitleCharAmount model then
-                8
-
-            else
-                1
+        typingSub =
+            Typing.subs model.typingModel
     in
-    Sub.batch
-        [ case model.timerState of
-            TimerGoingUp ->
-                Sub.batch
-                    [ Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
-                    , Time.every (60 * 10) (\_ -> RandomTypingPace)
-                    ]
-
-            TimerGoingDown ->
-                Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
-
-            TimerBridge _ ->
-                Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
-
-            TimerReset ->
-                Sub.none
-
-            TimerStop ->
-                Sub.none
-        ]
+    Sub.map TypingMsg typingSub
 
 
 
--- every (toFloat (posixToMillis model.pos)) (always TypingTime)
 -- VIEW
 
 
@@ -259,33 +140,20 @@ introTitles =
     ]
 
 
-getTitle : Int -> String
-getTitle index =
-    Array.fromList introTitles
-        |> Array.get index
-        |> Maybe.withDefault "Hi, I am a robot!"
-
-
-getTitleCharAmount : Model -> Int
-getTitleCharAmount model =
-    getTitle model.titleIndex
-        |> String.length
-
-
 viewIntro : Model -> Html Msg
 viewIntro model =
     let
-        slicer : Int -> Int -> String
-        slicer index typing =
-            getTitle index
-                |> String.slice 0 typing
+        m =
+            model.typingModel
     in
     section [ class "intro" ]
         [ h1
             [ class "intro__title"
-            , ariaLabel <| getTitle model.titleIndex
-            , onClick <| ChangeTimerState TimerReset
+            , ariaLabel <| Typing.getTitle m m.titleIndex
+            , Typing.ChangeTimerState Typing.Reset
+                |> TypingMsg
+                |> onClick
             ]
-            [ text <| slicer model.titleIndex model.typingTimeChar
+            [ text <| Typing.slicer m m.titleIndex m.typingTimeChar
             ]
         ]

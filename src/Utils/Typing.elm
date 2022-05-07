@@ -1,7 +1,18 @@
-module Utils.Typing exposing (..)
+module Utils.Typing exposing
+    ( Model
+    , Msg(..)
+    , TypingState(..)
+    , getTitle
+    , init
+    , initTying
+    , slicer
+    , subs
+    , tc
+    , update
+    )
 
 import Array
-import Html exposing (Attribute, Html, text)
+import Html exposing (Attribute, Html, p, text)
 import Html.Attributes exposing (style)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
@@ -20,19 +31,40 @@ type alias Model =
     , titleIndex : Int
     , typingTimeChar : Int
     , typingRandomPace : Float
-    , timerState : TimerState
+    , timerState : TypingState
     , typingReset : Bool
+    }
+
+
+type alias Typing =
+    { model : Model
+    , html : List (Attribute Msg) -> List (Html Msg) -> Html Msg
+    , attrs : List (Attribute Msg)
     }
 
 
 init : Model
 init =
-    { titleList = []
+    { titleList =
+        [ "Hi, I'm Johann"
+        , "I'm a software developer"
+        , "I work at the web"
+        , "I Love Code, UI and Design"
+        , "So let's work together"
+        ]
     , titleIndex = 0
     , typingTimeChar = 0
     , typingRandomPace = 10
-    , timerState = TimerGoingUp
+    , timerState = GoingUp
     , typingReset = False
+    }
+
+
+initTying : Typing
+initTying =
+    { model = init
+    , html = p
+    , attrs = []
     }
 
 
@@ -40,18 +72,18 @@ init =
 -- UPDATE
 
 
-type TimerState
-    = TimerGoingUp
-    | TimerGoingDown
-    | TimerBridge Bool
-    | TimerReset
-    | TimerStop
+type TypingState
+    = GoingUp
+    | GoingDown
+    | Bridge Bool
+    | Reset
+    | Stop
 
 
 type Msg
     = RandomTypingPace
     | NewTypingPace Float
-    | ChangeTimerState TimerState
+    | ChangeTimerState TypingState
     | TypingTimeAdd
     | TypingTimeSub
 
@@ -72,19 +104,19 @@ update msg model =
 
                 stopTyping timingState =
                     if checkIfListOfTitlesIsFull then
-                        TimerStop
+                        Stop
 
                     else
                         timingState
             in
             case ts of
-                TimerGoingUp ->
-                    ( { model | timerState = stopTyping TimerGoingDown }, Cmd.none )
+                GoingUp ->
+                    ( { model | timerState = stopTyping GoingDown }, Cmd.none )
 
-                TimerGoingDown ->
-                    ( { model | timerState = TimerBridge model.typingReset }, Cmd.none )
+                GoingDown ->
+                    ( { model | timerState = Bridge model.typingReset }, Cmd.none )
 
-                TimerBridge reset ->
+                Bridge reset ->
                     let
                         timeReset =
                             if reset then
@@ -94,22 +126,22 @@ update msg model =
                                 model.titleIndex + 1
                     in
                     ( { model
-                        | timerState = stopTyping TimerGoingUp
+                        | timerState = stopTyping GoingUp
                         , titleIndex = timeReset
                         , typingReset = False
                       }
                     , Cmd.none
                     )
 
-                TimerReset ->
+                Reset ->
                     ( { model
-                        | timerState = TimerBridge True
+                        | timerState = Bridge True
                         , typingReset = True
                       }
                     , Cmd.none
                     )
 
-                TimerStop ->
+                Stop ->
                     ( model, Cmd.none )
 
         TypingTimeAdd ->
@@ -155,22 +187,22 @@ subs model =
     in
     Sub.batch
         [ case model.timerState of
-            TimerGoingUp ->
+            GoingUp ->
                 Sub.batch
                     [ Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
                     , Time.every (60 * 10) (\_ -> RandomTypingPace)
                     ]
 
-            TimerGoingDown ->
+            GoingDown ->
                 Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
 
-            TimerBridge _ ->
+            Bridge _ ->
                 Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
 
-            TimerReset ->
+            Reset ->
                 Sub.none
 
-            TimerStop ->
+            Stop ->
                 Sub.none
         ]
 
@@ -202,11 +234,21 @@ slicer model index typing =
 -- Typing Component
 
 
-tc : Model -> (List (Attribute Msg) -> List (Html Msg) -> Html Msg) -> Html Msg
-tc model component =
-    component
-        [ ariaLabel <| getTitle model model.titleIndex
-        , onClick <| ChangeTimerState TimerReset
-        , style "cursor-pointer" "pointer"
+tc : Typing -> Html Msg
+tc tModel =
+    let
+        model =
+            tModel.model
+    in
+    tModel.html
+        (tModel.attrs
+            ++ [ ariaLabel <| getTitle tModel.model tModel.model.titleIndex
+               , onClick <| ChangeTimerState Reset
+               , style "cursor-pointer" "pointer"
+               ]
+        )
+        [ text <|
+            slicer model
+                model.titleIndex
+                model.typingTimeChar
         ]
-        [ text <| slicer model model.titleIndex model.typingTimeChar ]
