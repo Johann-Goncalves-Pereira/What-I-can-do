@@ -54,6 +54,27 @@
 		border: 2px solid var(--clr-brand-1);
 
 		pointer-events: none;
+
+		&::before {
+			content: "";
+			position: absolute;
+			inset: -1px;
+			border-radius: inherit;
+
+			outline-offset: -4px;
+			outline: 2px dotted var(--clr-brand-1);
+
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			from {
+				transform: rotate(0deg);
+			}
+			to {
+				transform: rotate(360deg);
+			}
+		}
 	}
 
 	.intro {
