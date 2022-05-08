@@ -12,7 +12,7 @@ import Request
 import Round
 import Shared
 import Task
-import Utils.Cursor as Cursor exposing (cursor)
+import Utils.Cursor as Cursor
 import Utils.TaskBase exposing (run)
 import Utils.Typing as Typing
 import Utils.View exposing (customProps)
@@ -149,58 +149,66 @@ viewLayout model =
     Layout.layout
         { pageConfig
             | route = Route.Home_
+            , rootContent = Just [ cursor model ]
+            , rootAttrs =
+                [ Mouse.onMove (.clientPos >> Cursor.ClientMovement)
+                    |> Html.Attributes.map CursorMsg
+                ]
+                    |> Just
             , mainAttrs =
                 [ customProps
                     [ { prop = "header-height"
                       , value = String.fromInt model.headerSize ++ "px"
                       }
                     ]
-                , Mouse.onMove (.clientPos >> Cursor.ClientMovement)
-                    |> Html.Attributes.map CursorMsg
                 ]
             , mainContent = mainContentList model
         }
 
 
-mainContentList : Model -> List (Html Msg)
-mainContentList model =
+cursor : Model -> Html Msg
+cursor model =
     let
-        cursorValue :
+        cv :
             { x : Float
             , y : Float
             , w : Float
             , h : Float
             }
-        cursorValue =
+        cv =
+            -- Cursor Value
             { x = model.cursorModel.mouseClientPosition.x
             , y = model.cursorModel.mouseClientPosition.y
             , w = model.cursorSize.w
             , h = model.cursorSize.h
             }
     in
-    [ cursor
+    Cursor.cursor
         [ class "cursor"
         , id cursorId
         , customProps
             [ { prop = "cursor-pos-x"
               , value =
-                    Round.round 2 (cursorValue.x - cursorValue.w / 2) ++ "px"
+                    Round.round 2 (cv.x - cv.w / 2) ++ "px"
               }
             , { prop = "cursor-pos-y"
               , value =
-                    Round.round 2 (cursorValue.y - cursorValue.h / 2) ++ "px"
+                    Round.round 2 (cv.y - cv.h / 2) ++ "px"
               }
             ]
         ]
         Nothing
         |> Html.map CursorMsg
-    , viewIntro model
-    ]
-
 
 cursorId : String
 cursorId =
     "cursor"
+
+mainContentList : Model -> List (Html Msg)
+mainContentList model =
+    [ viewIntro model ]
+
+
 
 
 viewIntro : Model -> Html Msg

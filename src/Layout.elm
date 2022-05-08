@@ -1,4 +1,4 @@
-module Layout exposing (PageModel, layout, pageConfig, headerClass)
+module Layout exposing (PageModel, headerClass, layout, pageConfig)
 
 import Array
 import Gen.Route as Route exposing (Route)
@@ -8,14 +8,20 @@ import Regex
 
 
 
--- Model
+-- INIT
 
 
 type alias PageModel msg =
-    { route : Route
+    { -- Routing
+      route : Route
+
+    -- Root
+    , rootContent : Maybe (List (Html msg))
+    , rootAttrs : Maybe (List (Attribute msg))
+
+    -- Main
     , mainContent : List (Html msg)
     , mainAttrs : List (Attribute msg)
-    , extraPageComponent : Maybe (List (Html msg))
     }
 
 
@@ -28,10 +34,16 @@ type alias Link =
 
 pageConfig : PageModel msg
 pageConfig =
-    { route = Route.Home_
+    { -- Routing
+      route = Route.Home_
+
+    -- Root
+    , rootContent = Nothing
+    , rootAttrs = Nothing
+
+    -- Main
     , mainContent = []
     , mainAttrs = []
-    , extraPageComponent = Nothing
     }
 
 
@@ -44,7 +56,7 @@ defaultLink =
 
 
 
--- Structure
+-- ROUTING
 
 
 isRoute : Route -> Route -> Bool
@@ -84,7 +96,7 @@ classBuilder string =
 
 
 
--- View
+-- VIEW
 
 
 layout : PageModel msg -> List (Html msg)
@@ -94,22 +106,27 @@ layout model =
         mainClass =
             class <| "main--" ++ classBuilder (caseNamePage model.route)
     in
-    [ [ viewHeader model
-      , main_ (mainClass :: model.mainAttrs) model.mainContent
-      ]
-        ++ Maybe.withDefault [] model.extraPageComponent
-        |> div
-            [ id "root"
-            , classList
-                [ ( "scroll", True )
-                , ( String.concat
-                        [ "root--"
-                        , classBuilder <| caseNamePage model.route
-                        ]
-                  , True
-                  )
-                ]
+    [ div
+        ([ id "root"
+         , classList
+            [ ( "root", True )
+            , ( "scroll", True )
+            , ( String.concat
+                    [ "root--"
+                    , caseNamePage model.route
+                        |> classBuilder
+                    ]
+              , True
+              )
             ]
+         ]
+            ++ Maybe.withDefault [] model.rootAttrs
+        )
+        ([ viewHeader model
+         , main_ (mainClass :: model.mainAttrs) model.mainContent
+         ]
+            ++ Maybe.withDefault [] model.rootContent
+        )
     ]
 
 
