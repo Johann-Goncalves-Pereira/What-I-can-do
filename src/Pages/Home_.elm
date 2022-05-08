@@ -3,13 +3,17 @@ module Pages.Home_ exposing (Model, Msg, page, subs)
 import Browser.Dom as BrowserDom exposing (Element, Error)
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Html, h1, section)
-import Html.Attributes exposing (class)
+import Html exposing (Attribute, Html, h1, section, text)
+import Html.Attributes exposing (class, id)
+import Html.Events.Extra.Mouse as Mouse
 import Layout exposing (headerClass, pageConfig)
 import Page
 import Request
+import Round
 import Shared
 import Task
+import Utils.Cursor as Cursor exposing (cursor)
+import Utils.TaskBase exposing (run)
 import Utils.Typing as Typing
 import Utils.View exposing (customProps)
 import View exposing (View)
@@ -30,8 +34,9 @@ page shared req =
 
 
 type alias Model =
-    { -- Header
-      headerSize : Int
+    { headerSize : Int
+    , cursorSize : { w : Float, h : Float }
+    , cursorModel : Cursor.Model
     , typingModel : Typing.Model
     }
 
@@ -39,11 +44,15 @@ type alias Model =
 init : ( Model, Cmd Msg )
 init =
     ( { headerSize = 18
+      , cursorSize = { w = 48, h = 48 }
+      , cursorModel = Cursor.init
       , typingModel = Typing.init
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
             |> Task.attempt GotHeader
+        , BrowserDom.getElement cursorId
+            |> Task.attempt GotCursor
         ]
     )
 
@@ -54,6 +63,8 @@ init =
 
 type Msg
     = GotHeader (Result Error Element)
+    | GotCursor (Result Error Element)
+    | CursorMsg Cursor.Msg
     | TypingMsg Typing.Msg
 
 
@@ -72,6 +83,29 @@ update msg model =
                       }
                     , Cmd.none
                     )
+
+        GotCursor promiseResponse ->
+            case promiseResponse of
+                Err _ ->
+                    ( model, Cmd.none )
+
+                Ok element ->
+                    ( { model
+                        | cursorSize =
+                            { w = element.element.width
+                            , h = element.element.height
+                            }
+                      }
+                    , Cmd.none
+                    )
+
+        CursorMsg cursorMsg ->
+            ( { model
+                | cursorModel =
+                    Cursor.update cursorMsg model.cursorModel
+              }
+            , Cmd.none
+            )
 
         TypingMsg typingMsg ->
             let
@@ -121,9 +155,61 @@ viewLayout model =
                       , value = String.fromInt model.headerSize ++ "px"
                       }
                     ]
+                , Mouse.onMove (.clientPos >> Cursor.ClientMovement)
+                    |> Html.Attributes.map CursorMsg
                 ]
-            , mainContent = [ viewIntro model ]
+            , mainContent = mainContentList model
         }
+
+
+mainContentList : Model -> List (Html Msg)
+mainContentList model =
+    let
+        cursorValue :
+            { x : Float
+            , y : Float
+            , w : Float
+            , h : Float
+            }
+        cursorValue =
+            { x = model.cursorModel.mouseClientPosition.x
+            , y = model.cursorModel.mouseClientPosition.y
+            , w = model.cursorSize.w
+            , h = model.cursorSize.h
+            }
+    in
+    [ cursor
+        [ class "cursor"
+        , id cursorId
+        , customProps
+            [ { prop = "cursor-pos-x"
+              , value =
+                    Round.round 2 (cursorValue.x - cursorValue.w / 2) ++ "px"
+              }
+            , { prop = "cursor-pos-y"
+              , value =
+                    Round.round 2 (cursorValue.y - cursorValue.h / 2) ++ "px"
+              }
+            ]
+        ]
+        Nothing
+        |> Html.map CursorMsg
+    , viewIntro model
+    ]
+
+
+cursorId : String
+cursorId =
+    "cursor"
+
+
+viewIntro : Model -> Html Msg
+viewIntro model =
+    section [ class "intro" ]
+        [ class "intro__title"
+            |> Typing.tc model.typingModel h1
+            |> Html.map TypingMsg
+        ]
 
 
 introStringList : List String
@@ -134,12 +220,3 @@ introStringList =
     , "I Love Code, UI and Design"
     , "So let's work together"
     ]
-
-
-viewIntro : Model -> Html Msg
-viewIntro model =
-    section [ class "intro" ]
-        [ class "intro__title"
-            |> Typing.tc model.typingModel h1
-            |> Html.map TypingMsg
-        ]

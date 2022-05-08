@@ -1,5 +1,7 @@
 .root__header {
 	$compensation: 2rem;
+	position: relative;
+	z-index: var(--layer-3);
 	height: 5rem;
 
 	:where(&__nav, &__ul, &__item, &__link) {
@@ -31,5 +33,6 @@
 
 		font-size: 1.5rem;
 		font-weight: 500;
+		text-shadow: -1px 1px 0 #000;
 	}
 }

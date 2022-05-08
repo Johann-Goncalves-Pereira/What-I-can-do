@@ -253,7 +253,6 @@ tc model htmlElement attr =
         [ attr
         , ariaLabel <| getStringByIndex model model.stringIndex
         , onClick <| ChangeWritingState Reset
-        , style "cursor-pointer" "pointer"
         ]
         [ text <|
             slicer model
