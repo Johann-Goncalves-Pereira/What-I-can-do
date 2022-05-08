@@ -1,23 +1,18 @@
 module Utils.Typing exposing
     ( Model
     , Msg(..)
-    , TypingState(..)
-    , getTitle
     , init
-    , initTying
-    , slicer
     , subs
     , tc
     , update
     )
 
 import Array
-import Html exposing (Attribute, Html, p, text)
+import Html exposing (Attribute, Html, text)
 import Html.Attributes exposing (style)
 import Html.Attributes.Aria exposing (ariaLabel)
 import Html.Events exposing (onClick)
 import Random
-import Svg exposing (cursor)
 import Time
 import Utils.TaskBase exposing (run)
 
@@ -27,44 +22,23 @@ import Utils.TaskBase exposing (run)
 
 
 type alias Model =
-    { titleList : List String
-    , titleIndex : Int
-    , typingTimeChar : Int
-    , typingRandomPace : Float
-    , timerState : TypingState
-    , typingReset : Bool
-    }
-
-
-type alias Typing =
-    { model : Model
-    , html : List (Attribute Msg) -> List (Html Msg) -> Html Msg
-    , attrs : List (Attribute Msg)
+    { stringList : List String
+    , stringIndex : Int
+    , typingWritingTime : Int
+    , typingWritingPace : Float
+    , typingWritingState : TypingState
+    , resetTypingProcess : Bool
     }
 
 
 init : Model
 init =
-    { titleList =
-        [ "Hi, I'm Johann"
-        , "I'm a software developer"
-        , "I work at the web"
-        , "I Love Code, UI and Design"
-        , "So let's work together"
-        ]
-    , titleIndex = 0
-    , typingTimeChar = 0
-    , typingRandomPace = 10
-    , timerState = GoingUp
-    , typingReset = False
-    }
-
-
-initTying : Typing
-initTying =
-    { model = init
-    , html = p
-    , attrs = []
+    { stringList = [ "Change This String To Anything" ]
+    , stringIndex = 0
+    , typingWritingTime = 0
+    , typingWritingPace = 10
+    , typingWritingState = GoingUp
+    , resetTypingProcess = False
     }
 
 
@@ -81,26 +55,74 @@ type TypingState
 
 
 type Msg
-    = RandomTypingPace
-    | NewTypingPace Float
-    | ChangeTimerState TypingState
-    | TypingTimeAdd
-    | TypingTimeSub
+    = TypingMore
+    | TypingLess
+    | TypingWritingPace
+    | NewTypingWritingPace Float
+    | ChangeWritingState TypingState
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        RandomTypingPace ->
-            ( model, Random.generate NewTypingPace (Random.float 1 3) )
+        TypingMore ->
+            let
+                typingMore =
+                    model.typingWritingTime + 1
+            in
+            if model.typingWritingTime < getCharAmount model - 1 then
+                ( { model | typingWritingTime = typingMore }
+                , Cmd.none
+                )
 
-        NewTypingPace t ->
-            ( { model | typingRandomPace = t }, Cmd.none )
+            else if model.typingWritingTime < getCharAmount model then
+                ( { model | typingWritingTime = typingMore }
+                , run <| ChangeWritingState model.typingWritingState
+                )
 
-        ChangeTimerState ts ->
+            else
+                ( model
+                , run <| ChangeWritingState model.typingWritingState
+                )
+
+        TypingLess ->
+            if model.typingWritingTime > 0 then
+                ( { model
+                    | typingWritingTime =
+                        model.typingWritingTime - 1
+                  }
+                , Cmd.none
+                )
+
+            else
+                ( model
+                , run <| ChangeWritingState model.typingWritingState
+                )
+
+        TypingWritingPace ->
+            let
+                mostFast =
+                    1
+
+                mostSlow =
+                    3
+            in
+            ( model
+            , Random.float mostFast mostSlow
+                |> Random.generate NewTypingWritingPace
+            )
+
+        NewTypingWritingPace t ->
+            ( { model | typingWritingPace = t }, Cmd.none )
+
+        ChangeWritingState ts ->
             let
                 checkIfListOfTitlesIsFull =
-                    model.titleIndex >= List.length model.titleList - 1 && model.typingReset == False
+                    model.stringIndex
+                        >= List.length model.stringList
+                        - 1
+                        && model.resetTypingProcess
+                        == False
 
                 stopTyping timingState =
                     if checkIfListOfTitlesIsFull then
@@ -111,10 +133,20 @@ update msg model =
             in
             case ts of
                 GoingUp ->
-                    ( { model | timerState = stopTyping GoingDown }, Cmd.none )
+                    ( { model
+                        | typingWritingState =
+                            stopTyping GoingDown
+                      }
+                    , Cmd.none
+                    )
 
                 GoingDown ->
-                    ( { model | timerState = Bridge model.typingReset }, Cmd.none )
+                    ( { model
+                        | typingWritingState =
+                            Bridge model.resetTypingProcess
+                      }
+                    , Cmd.none
+                    )
 
                 Bridge reset ->
                     let
@@ -123,49 +155,26 @@ update msg model =
                                 0
 
                             else
-                                model.titleIndex + 1
+                                model.stringIndex + 1
                     in
                     ( { model
-                        | timerState = stopTyping GoingUp
-                        , titleIndex = timeReset
-                        , typingReset = False
+                        | typingWritingState = stopTyping GoingUp
+                        , stringIndex = timeReset
+                        , resetTypingProcess = False
                       }
                     , Cmd.none
                     )
 
                 Reset ->
                     ( { model
-                        | timerState = Bridge True
-                        , typingReset = True
+                        | typingWritingState = Bridge True
+                        , resetTypingProcess = True
                       }
                     , Cmd.none
                     )
 
                 Stop ->
                     ( model, Cmd.none )
-
-        TypingTimeAdd ->
-            if model.typingTimeChar < getTitleCharAmount model - 1 then
-                ( { model | typingTimeChar = model.typingTimeChar + 1 }
-                , Cmd.none
-                )
-
-            else if model.typingTimeChar < getTitleCharAmount model then
-                ( { model | typingTimeChar = model.typingTimeChar + 1 }
-                , run <| ChangeTimerState model.timerState
-                )
-
-            else
-                ( model, run <| ChangeTimerState model.timerState )
-
-        TypingTimeSub ->
-            if model.typingTimeChar > 0 then
-                ( { model | typingTimeChar = model.typingTimeChar - 1 }
-                , Cmd.none
-                )
-
-            else
-                ( model, run <| ChangeTimerState model.timerState )
 
 
 
@@ -176,28 +185,28 @@ subs : Model -> Sub Msg
 subs model =
     let
         eraserPace =
-            if model.typingTimeChar < 3 then
+            if model.typingWritingTime < 3 then
                 4
 
-            else if model.typingTimeChar == getTitleCharAmount model then
+            else if model.typingWritingTime == getCharAmount model then
                 8
 
             else
                 1
     in
     Sub.batch
-        [ case model.timerState of
+        [ case model.typingWritingState of
             GoingUp ->
                 Sub.batch
-                    [ Time.every (60 * model.typingRandomPace) (\_ -> TypingTimeAdd)
-                    , Time.every (60 * 10) (\_ -> RandomTypingPace)
+                    [ Time.every (60 * model.typingWritingPace) (\_ -> TypingMore)
+                    , Time.every (60 * 10) (\_ -> TypingWritingPace)
                     ]
 
             GoingDown ->
-                Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
+                Time.every (60 * eraserPace) (\_ -> TypingLess)
 
             Bridge _ ->
-                Time.every (60 * eraserPace) (\_ -> TypingTimeSub)
+                Time.every (60 * eraserPace) (\_ -> TypingLess)
 
             Reset ->
                 Sub.none
@@ -211,22 +220,22 @@ subs model =
 -- VIEW
 
 
-getTitle : Model -> Int -> String
-getTitle model index =
-    Array.fromList model.titleList
+getStringByIndex : Model -> Int -> String
+getStringByIndex model index =
+    Array.fromList model.stringList
         |> Array.get index
-        |> Maybe.withDefault "Hi, I am a robot!"
+        |> Maybe.withDefault "Hi, I am a incompetent robot!"
 
 
-getTitleCharAmount : Model -> Int
-getTitleCharAmount model =
-    getTitle model model.titleIndex
+getCharAmount : Model -> Int
+getCharAmount model =
+    getStringByIndex model model.stringIndex
         |> String.length
 
 
 slicer : Model -> Int -> Int -> String
 slicer model index typing =
-    getTitle model index
+    getStringByIndex model index
         |> String.slice 0 typing
 
 
@@ -234,21 +243,20 @@ slicer model index typing =
 -- Typing Component
 
 
-tc : Typing -> Html Msg
-tc tModel =
-    let
-        model =
-            tModel.model
-    in
-    tModel.html
-        (tModel.attrs
-            ++ [ ariaLabel <| getTitle tModel.model tModel.model.titleIndex
-               , onClick <| ChangeTimerState Reset
-               , style "cursor-pointer" "pointer"
-               ]
-        )
+tc :
+    Model
+    -> (List (Attribute Msg) -> List (Html Msg) -> Html Msg)
+    -> Attribute Msg
+    -> Html Msg
+tc model htmlElement attr =
+    htmlElement
+        [ attr
+        , ariaLabel <| getStringByIndex model model.stringIndex
+        , onClick <| ChangeWritingState Reset
+        , style "cursor-pointer" "pointer"
+        ]
         [ text <|
             slicer model
-                model.titleIndex
-                model.typingTimeChar
+                model.stringIndex
+                model.typingWritingTime
         ]
