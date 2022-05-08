@@ -1,6 +1,6 @@
-module Utils.Mouse exposing (..)
+module Utils.Cursor exposing (..)
 
-import Html exposing (Attribute, Html, div, text)
+import Html exposing (Attribute, Html, div)
 import Html.Events
 import Html.Events.Extra.Mouse as Mouse
 import Json.Decode as Decode exposing (Decoder)
@@ -12,8 +12,30 @@ type alias EventWithMovement =
     }
 
 
+type alias Model =
+    { mouseClientPosition : { x : Float, y : Float }
+    }
+
+
+init : Model
+init =
+    { mouseClientPosition = { x = 0, y = 0 } }
+
+
 type Msg
-    = Movement ( Float, Float )
+    = ClientMovement ( Float, Float )
+
+
+update : Msg -> Model -> Model
+update msg model =
+    case msg of
+        ClientMovement ( x, y ) ->
+            { model
+                | mouseClientPosition =
+                    { x = x
+                    , y = y
+                    }
+            }
 
 
 onMove : (EventWithMovement -> Msg) -> Html.Attribute Msg
@@ -49,5 +71,6 @@ movementDecoder =
 
 cursor : List (Attribute Msg) -> Maybe (List (Html Msg)) -> Html Msg
 cursor attrs content =
-    div ([ Mouse.onMove (.clientPos >> Movement) ] ++ attrs)
+    --? Mouse.onMove (.clientPos >> ClientMovement)
+    div attrs
         (Maybe.withDefault [] content)
