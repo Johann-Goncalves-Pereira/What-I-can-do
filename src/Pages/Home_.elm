@@ -1,24 +1,15 @@
 module Pages.Home_ exposing (Model, Msg, page, subs)
 
-import Array exposing (Array)
 import Browser.Dom as BrowserDom exposing (Element, Error)
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Html, a, div, h1, h2, h5, p, section, span, text)
-import Html.Attributes exposing (class, href, id, rel, style, tabindex, target)
-import Html.Attributes.Aria exposing (ariaLabel, ariaLabelledby)
-import Html.Events exposing (onClick)
+import Html exposing (Html, h1, section)
+import Html.Attributes exposing (class)
 import Layout exposing (headerClass, pageConfig)
 import Page
-import Platform exposing (Task)
-import Random
 import Request
-import Round exposing (floorNumCom)
 import Shared
-import Svg exposing (desc)
 import Task
-import Time exposing (Posix, every, millisToPosix, posixToMillis)
-import Utils.TaskBase exposing (run)
 import Utils.Typing as Typing
 import Utils.View exposing (customProps)
 import View exposing (View)
@@ -62,8 +53,7 @@ init =
 
 
 type Msg
-    = -- Header
-      GotHeader (Result Error Element)
+    = GotHeader (Result Error Element)
     | TypingMsg Typing.Msg
 
 
@@ -76,7 +66,10 @@ update msg model =
                     ( model, Cmd.none )
 
                 Ok element ->
-                    ( { model | headerSize = round element.element.height }
+                    ( { model
+                        | headerSize =
+                            round element.element.height
+                      }
                     , Cmd.none
                     )
 
@@ -85,7 +78,12 @@ update msg model =
                 ( typingModel, typingCmd ) =
                     Typing.update typingMsg model.typingModel
             in
-            ( { model | typingModel = typingModel }
+            ( { model
+                | typingModel =
+                    { typingModel
+                        | stringList = introStringList
+                    }
+              }
             , Cmd.map TypingMsg typingCmd
             )
 
@@ -96,11 +94,9 @@ update msg model =
 
 subs : Model -> Sub Msg
 subs model =
-    let
-        typingSub =
-            Typing.subs model.typingModel
-    in
-    Sub.map TypingMsg typingSub
+    model.typingModel
+        |> Typing.subs
+        |> Sub.map TypingMsg
 
 
 
@@ -130,8 +126,8 @@ viewLayout model =
         }
 
 
-introTitles : List String
-introTitles =
+introStringList : List String
+introStringList =
     [ "Hi, I'm Johann"
     , "I'm a software developer"
     , "I work at the web"
@@ -142,18 +138,8 @@ introTitles =
 
 viewIntro : Model -> Html Msg
 viewIntro model =
-    let
-        m =
-            model.typingModel
-    in
     section [ class "intro" ]
-        [ h1
-            [ class "intro__title"
-            , ariaLabel <| Typing.getTitle m m.titleIndex
-            , Typing.ChangeTimerState Typing.Reset
-                |> TypingMsg
-                |> onClick
-            ]
-            [ text <| Typing.slicer m m.titleIndex m.typingTimeChar
-            ]
+        [ class "intro__title"
+            |> Typing.tc model.typingModel h1
+            |> Html.map TypingMsg
         ]
