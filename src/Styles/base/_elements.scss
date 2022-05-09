@@ -1,15 +1,12 @@
-//? Here is I use to make the base elements of the page;
-
 @use "../abstracts/" as *;
 
-html body {
+body,
+.root {
 	color: var(--clr-text-0);
 	background: var(--clr-surface-0);
 }
 
-//! Main div with all the things
 .root {
-	//? Now #root is the new base
 	position: absolute;
 	inset: 0;
 

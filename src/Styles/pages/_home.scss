@@ -29,52 +29,8 @@
 	background-repeat: no-repeat;
 	background-size: auto 100%;
 
-	cursor: none;
-
 	@include md(xl) {
 		background-size: 100% auto;
-	}
-
-	.cursor {
-		$x: var(--cursor-pos-x);
-		$y: var(--cursor-pos-y);
-		$x2: clamp(0px, #{$x}, 100vw - 100%);
-		$y2: clamp(0px, #{$y}, 100vh - 100%);
-
-		position: absolute;
-		top: 0;
-		left: 0;
-
-		transform: translate(#{$x2}, #{$y2});
-
-		width: 1rem;
-		aspect-ratio: 1;
-
-		border-radius: 100vw;
-		border: 2px solid var(--clr-brand-1);
-
-		pointer-events: none;
-
-		&::before {
-			content: "";
-			position: absolute;
-			inset: -1px;
-			border-radius: inherit;
-
-			outline-offset: -4px;
-			outline: 2px dotted var(--clr-brand-1);
-
-			animation: spin 1s linear infinite;
-		}
-
-		@keyframes spin {
-			from {
-				transform: rotate(0deg);
-			}
-			to {
-				transform: rotate(360deg);
-			}
-		}
 	}
 
 	.intro {
@@ -86,6 +42,10 @@
 		height: calc(100vh - var(--header-height) * 2);
 
 		&__title {
+			&-wrapper {
+				width: fit-content;
+			}
+
 			$cursor-adjust: 0px;
 
 			width: fit-content;
