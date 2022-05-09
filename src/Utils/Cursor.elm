@@ -1,29 +1,25 @@
-module Utils.Cursor exposing (..)
+module Utils.Cursor exposing (Model, Msg(..), cursor, init, update)
 
 import Html exposing (Attribute, Html, div)
-import Html.Events
-import Html.Events.Extra.Mouse as Mouse
-import Json.Decode as Decode exposing (Decoder)
-
-
-type alias EventWithMovement =
-    { mouseEvent : Mouse.Event
-    , movement : ( Float, Float )
-    }
 
 
 type alias Model =
     { mouseClientPosition : { x : Float, y : Float }
+    , mouseCursorShow : Bool
     }
 
 
 init : Model
 init =
-    { mouseClientPosition = { x = 0, y = 0 } }
+    { mouseClientPosition = { x = 0, y = 0 }
+    , mouseCursorShow = False
+    }
 
 
 type Msg
     = ClientMovement ( Float, Float )
+    | CursorShow
+    | CursorHide
 
 
 update : Msg -> Model -> Model
@@ -37,40 +33,18 @@ update msg model =
                     }
             }
 
-
-onMove : (EventWithMovement -> Msg) -> Html.Attribute Msg
-onMove tag =
-    let
-        decoder =
-            decodeWithMovement
-                |> Decode.map tag
-                |> Decode.map options
-
-        options message =
-            { message = message
-            , stopPropagation = False
-            , preventDefault = True
+        CursorShow ->
+            { model
+                | mouseCursorShow = True
             }
-    in
-    Html.Events.custom "mousemove" decoder
+
+        CursorHide ->
+            { model
+                | mouseCursorShow = False
+            }
 
 
-decodeWithMovement : Decoder EventWithMovement
-decodeWithMovement =
-    Decode.map2 EventWithMovement
-        Mouse.eventDecoder
-        movementDecoder
-
-
-movementDecoder : Decoder ( Float, Float )
-movementDecoder =
-    Decode.map2 (\a b -> ( a, b ))
-        (Decode.field "movementX" Decode.float)
-        (Decode.field "movementY" Decode.float)
-
-
-cursor : List (Attribute Msg) -> Maybe (List (Html Msg)) -> Html Msg
+cursor : List (Attribute Msg) -> List (Html Msg) -> Html Msg
 cursor attrs content =
     --? Mouse.onMove (.clientPos >> ClientMovement)
-    div attrs
-        (Maybe.withDefault [] content)
+    div attrs content

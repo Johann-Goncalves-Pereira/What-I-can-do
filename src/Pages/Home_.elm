@@ -3,11 +3,13 @@ module Pages.Home_ exposing (Model, Msg, page, subs)
 import Browser.Dom as BrowserDom exposing (Element, Error)
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Attribute, Html, h1, section, text)
-import Html.Attributes exposing (class, id)
+import Html exposing (Attribute, Html, div, h1, section, text)
+import Html.Attributes exposing (attribute, class, classList, id)
+import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Html.Events.Extra.Mouse as Mouse
 import Layout exposing (headerClass, pageConfig)
 import Page
+import Process
 import Request
 import Round
 import Shared
@@ -34,25 +36,36 @@ page shared req =
 
 
 type alias Model =
-    { headerSize : Int
+    { -- Size
+      headerSize : Int
     , cursorSize : { w : Float, h : Float }
+
+    -- Model
     , cursorModel : Cursor.Model
     , typingModel : Typing.Model
+
+    -- UI
+    , cursorUI : String
     }
 
 
 init : ( Model, Cmd Msg )
 init =
-    ( { headerSize = 18
+    ( { -- Size
+        headerSize = 18
       , cursorSize = { w = 48, h = 48 }
+
+      -- Init
       , cursorModel = Cursor.init
       , typingModel = Typing.init
+
+      -- UI
+      , cursorUI = ""
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
             |> Task.attempt GotHeader
-        , BrowserDom.getElement cursorId
-            |> Task.attempt GotCursor
+        , getCursorSize
         ]
     )
 
@@ -61,11 +74,20 @@ init =
 -- UPDATE
 
 
+type CursorUI
+    = Normal
+    | Big
+
+
 type Msg
-    = GotHeader (Result Error Element)
+    = -- Size
+      GotHeader (Result Error Element)
     | GotCursor (Result Error Element)
+      -- Msg
     | CursorMsg Cursor.Msg
     | TypingMsg Typing.Msg
+      -- UI
+    | CursorUI CursorUI
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -121,6 +143,20 @@ update msg model =
             , Cmd.map TypingMsg typingCmd
             )
 
+        CursorUI ui ->
+            case ui of
+                Normal ->
+                    ( { model | cursorUI = "" }, getCursorSize )
+
+                Big ->
+                    ( { model | cursorUI = cursorId ++ "--big" }, getCursorSize )
+
+
+getCursorSize : Cmd Msg
+getCursorSize =
+    BrowserDom.getElement cursorId
+        |> Task.attempt GotCursor
+
 
 
 -- SUBSCRIBE
@@ -151,9 +187,12 @@ viewLayout model =
             | route = Route.Home_
             , rootContent = Just [ cursor model ]
             , rootAttrs =
-                [ Mouse.onMove (.clientPos >> Cursor.ClientMovement)
-                    |> Html.Attributes.map CursorMsg
+                [ -- Cursor
+                  Mouse.onMove (.clientPos >> Cursor.ClientMovement)
+                , onMouseLeave Cursor.CursorHide
+                , onMouseEnter Cursor.CursorShow
                 ]
+                    |> List.map (Html.Attributes.map CursorMsg)
                     |> Just
             , mainAttrs =
                 [ customProps
@@ -182,41 +221,78 @@ cursor model =
             , w = model.cursorSize.w
             , h = model.cursorSize.h
             }
+
+        clampStart =
+            "clamp(0px,"
+
+        clampEnd =
+            ", 100vw - 100%)"
+
+        positionComposer =
+            String.concat
+                [ "transform:translate("
+                , clampStart
+                , Round.round 2 (cv.x - cv.w / 2)
+                , "px"
+                , clampEnd
+                , ","
+                , clampStart
+                , Round.round 2 (cv.y - cv.h / 2)
+                , "px"
+                , clampEnd
+                ]
+                |> attribute "style"
     in
-    Cursor.cursor
-        [ class "cursor"
-        , id cursorId
-        , customProps
-            [ { prop = "cursor-pos-x"
-              , value =
-                    Round.round 2 (cv.x - cv.w / 2) ++ "px"
-              }
-            , { prop = "cursor-pos-y"
-              , value =
-                    Round.round 2 (cv.y - cv.h / 2) ++ "px"
-              }
+    if model.cursorModel.mouseCursorShow then
+        Cursor.cursor
+            [ classList
+                [ ( cursorId, True )
+                , ( model.cursorUI, True )
+                ]
+            , id cursorId
+            , positionComposer
+
+            {- , customProps
+               [ { prop = "cursor-pos-x"
+                 , value =
+                       Round.round 2 (cv.x - cv.w / 2) ++ "px"
+                 }
+               , { prop = "cursor-pos-y"
+                 , value =
+                       Round.round 2 (cv.y - cv.h / 2) ++ "px"
+                 }
+               ]
+            -}
             ]
-        ]
-        Nothing
-        |> Html.map CursorMsg
+            [ div [ class <| cursorId ++ "__ui" ] [] ]
+            |> Html.map CursorMsg
+
+    else
+        text ""
+
 
 cursorId : String
 cursorId =
     "cursor"
+
 
 mainContentList : Model -> List (Html Msg)
 mainContentList model =
     [ viewIntro model ]
 
 
-
-
 viewIntro : Model -> Html Msg
 viewIntro model =
     section [ class "intro" ]
-        [ class "intro__title"
-            |> Typing.tc model.typingModel h1
-            |> Html.map TypingMsg
+        [ div
+            [ class "intro__title-wrapper"
+            , onMouseEnter (CursorUI Big)
+            , onMouseLeave (CursorUI Normal)
+            ]
+            [ class "intro__title"
+                |> Typing.tc model.typingModel h1
+                |> Html.map TypingMsg
+            ]
         ]
 
 
