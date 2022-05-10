@@ -18,19 +18,14 @@
 	background-image: url("../../../images/home-intro.svg");
 	background-position: top;
 	background-repeat: no-repeat;
-	background-size: auto 100%;
+	background-size: cover;
 }
 
 .main--home {
 	$max-width: 110rem;
 	$base-padding: 4rem;
 
-	// padding-block: var(--header-height);
 	padding-inline: 4rem;
-
-	@include md(xl) {
-		background-size: 100% auto;
-	}
 
 	.intro {
 		display: grid;
@@ -46,6 +41,8 @@
 				width: fit-content;
 			}
 
+			// font-style: italic;
+
 			$cursor-adjust: 0px;
 
 			width: fit-content;
@@ -55,7 +52,6 @@
 			line-height: 3ex;
 			white-space: normal;
 			user-select: none;
-			// cursor: pointer;
 
 			@include longShadow(#ffffff0d);
 
@@ -69,8 +65,6 @@
 				width: 0.1875rem;
 
 				background-color: var(--clr-brand-0);
-
-				// animation: blink 1000ms ease infinite;
 			}
 		}
 	}
