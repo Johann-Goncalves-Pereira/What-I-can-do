@@ -1,7 +1,6 @@
 .root__header {
 	$compensation: 2rem;
 	position: relative;
-	z-index: var(--layer-3);
 	height: 5rem;
 
 	:where(&__nav, &__ul, &__item, &__link) {

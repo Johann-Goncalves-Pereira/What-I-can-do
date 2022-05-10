@@ -1,9 +1,10 @@
 module Pages.Home_ exposing (Model, Msg, page, subs)
 
+import Array exposing (Array)
 import Browser.Dom as BrowserDom exposing (Element, Error)
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Attribute, Html, div, h1, section, text)
+import Html exposing (Attribute, Html, div, h1, p, section, span, text)
 import Html.Attributes exposing (attribute, class, classList, id)
 import Html.Events exposing (onMouseEnter, onMouseLeave)
 import Html.Events.Extra.Mouse as Mouse
@@ -45,7 +46,10 @@ type alias Model =
     , typingModel : Typing.Model
 
     -- UI
-    , cursorUI : String
+    , cursorUI :
+        { className : String
+        , content : Maybe (List (Html Msg))
+        }
     }
 
 
@@ -60,7 +64,7 @@ init =
       , typingModel = Typing.init
 
       -- UI
-      , cursorUI = ""
+      , cursorUI = { className = "", content = Nothing }
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
@@ -76,7 +80,8 @@ init =
 
 type CursorUI
     = Normal
-    | Big
+    | MixSolid
+    | Clickable
 
 
 type Msg
@@ -144,12 +149,34 @@ update msg model =
             )
 
         CursorUI ui ->
+            let
+                mc =
+                    model.cursorUI
+            in
             case ui of
                 Normal ->
-                    ( { model | cursorUI = "" }, getCursorSize )
+                    ( { model
+                        | cursorUI =
+                            { mc | className = "", content = Nothing }
+                      }
+                    , getCursorSize
+                    )
 
-                Big ->
-                    ( { model | cursorUI = cursorId ++ "--big" }, getCursorSize )
+                MixSolid ->
+                    ( { model
+                        | cursorUI =
+                            { mc | className = "--mix", content = Nothing }
+                      }
+                    , getCursorSize
+                    )
+
+                Clickable ->
+                    ( { model
+                        | cursorUI =
+                            { mc | className = "--clickable", content = Just <| cursorContent 0 }
+                      }
+                    , getCursorSize
+                    )
 
 
 getCursorSize : Cmd Msg
@@ -185,15 +212,18 @@ viewLayout model =
     Layout.layout
         { pageConfig
             | route = Route.Home_
-            , rootContent = Just [ cursor model ]
+            , rootContent = { before = [ cursor model ], after = [] }
             , rootAttrs =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
-                , onMouseLeave Cursor.CursorHide
                 , onMouseEnter Cursor.CursorShow
+                , onMouseLeave Cursor.CursorHide
                 ]
                     |> List.map (Html.Attributes.map CursorMsg)
-                    |> Just
+            , linkAttrs =
+                [ onMouseEnter <| CursorUI MixSolid
+                , onMouseLeave <| CursorUI Normal
+                ]
             , mainAttrs =
                 [ customProps
                     [ { prop = "header-height"
@@ -222,50 +252,42 @@ cursor model =
             , h = model.cursorSize.h
             }
 
-        clampStart =
-            "clamp(0px,"
-
-        clampEnd =
-            ", 100vw - 100%)"
-
-        positionComposer =
+        transformPosition : Attribute msg
+        transformPosition =
             String.concat
-                [ "transform:translate("
-                , clampStart
-                , Round.round 2 (cv.x - cv.w / 2)
-                , "px"
-                , clampEnd
-                , ","
-                , clampStart
-                , Round.round 2 (cv.y - cv.h / 2)
-                , "px"
-                , clampEnd
+                [ "transform:"
+                , "translate(clamp(0px,"
+                , Round.round 0 (cv.x - cv.w / 2)
+                , "px,100vw - 100% - 2px),"
+                , "clamp(0px,"
+                , Round.round 0 (cv.y - cv.h / 2)
+                , "px,100vh - 100% - 2px));"
                 ]
                 |> attribute "style"
     in
     if model.cursorModel.mouseCursorShow then
-        Cursor.cursor
+        div
             [ classList
                 [ ( cursorId, True )
-                , ( model.cursorUI, True )
+                , ( cursorId ++ model.cursorUI.className, True )
                 ]
             , id cursorId
-            , positionComposer
-
-            {- , customProps
-               [ { prop = "cursor-pos-x"
-                 , value =
-                       Round.round 2 (cv.x - cv.w / 2) ++ "px"
-                 }
-               , { prop = "cursor-pos-y"
-                 , value =
-                       Round.round 2 (cv.y - cv.h / 2) ++ "px"
-                 }
-               ]
-            -}
+            , transformPosition
             ]
-            [ div [ class <| cursorId ++ "__ui" ] [] ]
-            |> Html.map CursorMsg
+            [ div
+                [ classList
+                    [ ( cursorId ++ "__ui", True )
+                    , ( cursorId ++ "__ui" ++ model.cursorUI.className, True )
+                    ]
+                ]
+                (case model.cursorUI.content of
+                    Nothing ->
+                        []
+
+                    Just content ->
+                        content
+                )
+            ]
 
     else
         text ""
@@ -274,6 +296,15 @@ cursor model =
 cursorId : String
 cursorId =
     "cursor"
+
+
+cursorContent : Int -> List (Html Msg)
+cursorContent index =
+    [ [ span [ class "click" ] [ text "Click me" ] ]
+    ]
+        |> Array.fromList
+        |> Array.get index
+        |> Maybe.withDefault []
 
 
 mainContentList : Model -> List (Html Msg)
@@ -286,7 +317,7 @@ viewIntro model =
     section [ class "intro" ]
         [ div
             [ class "intro__title-wrapper"
-            , onMouseEnter (CursorUI Big)
+            , onMouseEnter (CursorUI Clickable)
             , onMouseLeave (CursorUI Normal)
             ]
             [ class "intro__title"
