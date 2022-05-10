@@ -1,6 +1,4 @@
-module Utils.Cursor exposing (Model, Msg(..), cursor, init, update)
-
-import Html exposing (Attribute, Html, div)
+module Utils.Cursor exposing (Model, Msg(..), init, update)
 
 
 type alias Model =
@@ -42,9 +40,3 @@ update msg model =
             { model
                 | mouseCursorShow = False
             }
-
-
-cursor : List (Attribute Msg) -> List (Html Msg) -> Html Msg
-cursor attrs content =
-    --? Mouse.onMove (.clientPos >> ClientMovement)
-    div attrs content

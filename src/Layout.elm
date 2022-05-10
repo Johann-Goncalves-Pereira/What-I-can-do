@@ -1,4 +1,4 @@
-module Layout exposing (PageModel, headerClass, layout, pageConfig)
+module Layout exposing (Model, headerClass, layout, pageConfig)
 
 import Array
 import Gen.Route as Route exposing (Route)
@@ -11,13 +11,21 @@ import Regex
 -- INIT
 
 
-type alias PageModel msg =
+type alias Model msg =
     { -- Routing
       route : Route
 
     -- Root
-    , rootContent : Maybe (List (Html msg))
-    , rootAttrs : Maybe (List (Attribute msg))
+    , rootContent :
+        { before : List (Html msg)
+        , after : List (Html msg)
+        }
+    , rootAttrs : List (Attribute msg)
+
+    -- Header
+    , headerContent : List (Html msg)
+    , headerAttrs : List (Attribute msg)
+    , linkAttrs : List (Attribute msg)
 
     -- Main
     , mainContent : List (Html msg)
@@ -32,14 +40,19 @@ type alias Link =
     }
 
 
-pageConfig : PageModel msg
+pageConfig : Model msg
 pageConfig =
     { -- Routing
       route = Route.Home_
 
     -- Root
-    , rootContent = Nothing
-    , rootAttrs = Nothing
+    , rootContent = { before = [], after = [] }
+    , rootAttrs = []
+
+    -- Header
+    , headerContent = []
+    , headerAttrs = []
+    , linkAttrs = []
 
     -- Main
     , mainContent = []
@@ -99,7 +112,7 @@ classBuilder string =
 -- VIEW
 
 
-layout : PageModel msg -> List (Html msg)
+layout : Model msg -> List (Html msg)
 layout model =
     let
         mainClass : Attribute msg
@@ -120,12 +133,13 @@ layout model =
               )
             ]
          ]
-            ++ Maybe.withDefault [] model.rootAttrs
+            ++ model.rootAttrs
         )
-        ([ viewHeader model
-         , main_ (mainClass :: model.mainAttrs) model.mainContent
-         ]
-            ++ Maybe.withDefault [] model.rootContent
+        (model.rootContent.before
+            ++ [ viewHeader model
+               , main_ (mainClass :: model.mainAttrs) model.mainContent
+               ]
+            ++ model.rootContent.after
         )
     ]
 
@@ -135,21 +149,23 @@ headerClass =
     "root__header"
 
 
-viewHeader : PageModel msg -> Html msg
+viewHeader : Model msg -> Html msg
 viewHeader model =
-    header [ class headerClass, id headerClass ]
-        [ nav [ class <| headerClass ++ "__nav" ]
-            [ ul [ class <| headerClass ++ "__ul" ] <|
-                viewHeaderLinks model [ Route.Home_ ]
-            ]
-        ]
+    header ([ class headerClass, id headerClass ] ++ model.headerAttrs)
+        (model.headerContent
+            ++ [ nav [ class <| headerClass ++ "__nav" ]
+                    [ ul [ class <| headerClass ++ "__ul" ] <|
+                        viewHeaderLinks model [ Route.Home_ ]
+                    ]
+               ]
+        )
 
 
-viewHeaderLinks : PageModel msg -> List Route -> List (Html msg)
+viewHeaderLinks : Model msg -> List Route -> List (Html msg)
 viewHeaderLinks model links =
     List.map
         (\staticRoute ->
-            viewLink
+            viewLink model
                 { defaultLink
                     | routeName = caseNamePage staticRoute
                     , routeStatic = staticRoute
@@ -159,8 +175,8 @@ viewHeaderLinks model links =
         links
 
 
-viewLink : Link -> Html msg
-viewLink model =
+viewLink : Model msg -> Link -> Html msg
+viewLink model link =
     let
         linkClass : String
         linkClass =
@@ -168,14 +184,16 @@ viewLink model =
     in
     li [ class <| headerClass ++ "__item" ]
         [ a
-            [ class linkClass
-            , classList
+            ([ class linkClass
+             , classList
                 [ ( linkClass ++ "--current-page"
-                  , isRoute model.routeReceived model.routeStatic
+                  , isRoute link.routeReceived link.routeStatic
                   )
                 ]
-            , href <| Route.toHref model.routeStatic
-            , tabindex 1
-            ]
-            [ text model.routeName ]
+             , href <| Route.toHref link.routeStatic
+             , tabindex 1
+             ]
+                ++ model.linkAttrs
+            )
+            [ text link.routeName ]
         ]
