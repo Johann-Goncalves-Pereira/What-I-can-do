@@ -117,7 +117,7 @@ layout model =
     let
         mainClass : Attribute msg
         mainClass =
-            class <| "main--" ++ classBuilder (caseNamePage model.route)
+            class <| "root__main main--" ++ classBuilder (caseNamePage model.route)
     in
     [ div
         ([ id "root"

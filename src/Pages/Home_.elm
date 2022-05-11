@@ -46,10 +46,8 @@ type alias Model =
     , typingModel : Typing.Model
 
     -- UI
-    , cursorUI :
-        { className : String
-        , content : Maybe (List (Html Msg))
-        }
+    , cursorUI : CursorUI
+    , cursorClass : String
     }
 
 
@@ -64,12 +62,13 @@ init =
       , typingModel = Typing.init
 
       -- UI
-      , cursorUI = { className = "", content = Nothing }
+      , cursorUI = CursorUINormal
+      , cursorClass = ""
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
             |> Task.attempt GotHeader
-        , getCursorSize
+        , getCursorSize <| Just 5
         ]
     )
 
@@ -79,9 +78,9 @@ init =
 
 
 type CursorUI
-    = Normal
-    | MixSolid
-    | Clickable
+    = CursorUINormal
+    | CursorUIMixSolid
+    | CursorUIClick
 
 
 type Msg
@@ -151,38 +150,45 @@ update msg model =
         CursorUI ui ->
             let
                 mc =
-                    model.cursorUI
+                    model.cursorClass
             in
             case ui of
-                Normal ->
+                CursorUINormal ->
                     ( { model
-                        | cursorUI =
-                            { mc | className = "", content = Nothing }
+                        | cursorClass = ""
+                        , cursorUI = CursorUINormal
                       }
-                    , getCursorSize
+                    , getCursorSize <| Just 100
                     )
 
-                MixSolid ->
+                CursorUIMixSolid ->
                     ( { model
-                        | cursorUI =
-                            { mc | className = "--mix", content = Nothing }
+                        | cursorClass = "--mix"
+                        , cursorUI = CursorUIMixSolid
                       }
-                    , getCursorSize
+                    , getCursorSize <| Just 100
                     )
 
-                Clickable ->
+                CursorUIClick ->
                     ( { model
-                        | cursorUI =
-                            { mc | className = "--clickable", content = Just <| cursorContent 0 }
+                        | cursorClass = "--click"
+                        , cursorUI = CursorUIClick
                       }
-                    , getCursorSize
+                    , getCursorSize <| Just 100
                     )
 
 
-getCursorSize : Cmd Msg
-getCursorSize =
-    BrowserDom.getElement cursorId
-        |> Task.attempt GotCursor
+getCursorSize : Maybe Float -> Cmd Msg
+getCursorSize sleep =
+    case sleep of
+        Just time ->
+            Process.sleep time
+                |> Task.andThen (\_ -> BrowserDom.getElement cursorId)
+                |> Task.attempt GotCursor
+
+        Nothing ->
+            BrowserDom.getElement cursorId
+                |> Task.attempt GotCursor
 
 
 
@@ -212,17 +218,18 @@ viewLayout model =
     Layout.layout
         { pageConfig
             | route = Route.Home_
-            , rootContent = { before = [ cursor model ], after = [] }
+            , rootContent = { before = cursor model, after = [] }
             , rootAttrs =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
                 , onMouseEnter Cursor.CursorShow
-                , onMouseLeave Cursor.CursorHide
+
+                -- , onMouseLeave Cursor.CursorHide
                 ]
                     |> List.map (Html.Attributes.map CursorMsg)
             , linkAttrs =
-                [ onMouseEnter <| CursorUI MixSolid
-                , onMouseLeave <| CursorUI Normal
+                [ onMouseEnter <| CursorUI CursorUIMixSolid
+                , onMouseLeave <| CursorUI CursorUINormal
                 ]
             , mainAttrs =
                 [ customProps
@@ -235,9 +242,15 @@ viewLayout model =
         }
 
 
-cursor : Model -> Html Msg
+cursor : Model -> List (Html Msg)
 cursor model =
     let
+        classes : { content : String, normal : String }
+        classes =
+            { content = "root__" ++ cursorId ++ "--content"
+            , normal = "root__" ++ cursorId
+            }
+
         cv :
             { x : Float
             , y : Float
@@ -252,59 +265,78 @@ cursor model =
             , h = model.cursorSize.h
             }
 
-        transformPosition : Attribute msg
-        transformPosition =
+        transformPosition : Maybe String -> Attribute msg
+        transformPosition more =
             String.concat
                 [ "transform:"
-                , "translate(clamp(0px,"
+                , "translate3d(clamp(0px,"
                 , Round.round 0 (cv.x - cv.w / 2)
                 , "px,100vw - 100% - 2px),"
                 , "clamp(0px,"
                 , Round.round 0 (cv.y - cv.h / 2)
-                , "px,100vh - 100% - 2px));"
+                , "px,100vh - 100% - 2px)"
+                , ", 0px) "
+                , case more of
+                    Just m ->
+                        m
+
+                    Nothing ->
+                        String.join " "
+                            [ "scale3d(1, 1, 1)"
+                            , "rotateX(0deg)"
+                            , "rotateY(0deg)"
+                            , "rotateZ(0deg)"
+                            , "skew(0deg, 0deg)"
+                            ]
                 ]
                 |> attribute "style"
+
+        cursorContent : Maybe String -> List (Html Msg) -> Html Msg
+        cursorContent moreTransform content =
+            div
+                [ classList
+                    [ ( classes.content, True )
+                    , ( classes.content ++ model.cursorClass
+                      , True
+                      )
+                    ]
+                , transformPosition moreTransform
+                ]
+                content
+
+        baseCursor : Maybe String -> Html Msg
+        baseCursor moreTransform =
+            div
+                [ classList
+                    [ ( classes.normal, True )
+                    , ( classes.normal ++ model.cursorClass, True )
+                    ]
+                , id cursorId
+                , transformPosition moreTransform
+                ]
+                []
     in
     if model.cursorModel.mouseCursorShow then
-        div
-            [ classList
-                [ ( cursorId, True )
-                , ( cursorId ++ model.cursorUI.className, True )
-                ]
-            , id cursorId
-            , transformPosition
-            ]
-            [ div
-                [ classList
-                    [ ( cursorId ++ "__ui", True )
-                    , ( cursorId ++ "__ui" ++ model.cursorUI.className, True )
-                    ]
-                ]
-                (case model.cursorUI.content of
-                    Nothing ->
-                        []
+        case model.cursorUI of
+            CursorUINormal ->
+                [ baseCursor Nothing ]
 
-                    Just content ->
-                        content
-                )
-            ]
+            CursorUIMixSolid ->
+                [ baseCursor Nothing ]
+
+            CursorUIClick ->
+                [ baseCursor Nothing
+                , cursorContent Nothing
+                    [ span [] [ text "Click Me" ] ]
+                ]
 
     else
-        text ""
+        []
 
 
 cursorId : String
 cursorId =
     "cursor"
-
-
-cursorContent : Int -> List (Html Msg)
-cursorContent index =
-    [ [ span [ class "click" ] [ text "Click me" ] ]
-    ]
-        |> Array.fromList
-        |> Array.get index
-        |> Maybe.withDefault []
 
 
 mainContentList : Model -> List (Html Msg)
@@ -317,8 +349,8 @@ viewIntro model =
     section [ class "intro" ]
         [ div
             [ class "intro__title-wrapper"
-            , onMouseEnter (CursorUI Clickable)
-            , onMouseLeave (CursorUI Normal)
+            , onMouseEnter (CursorUI CursorUIClick)
+            , onMouseLeave (CursorUI CursorUINormal)
             ]
             [ class "intro__title"
                 |> Typing.tc model.typingModel h1
