@@ -15,6 +15,7 @@ import Request
 import Round
 import Shared
 import Task
+import Time
 import Utils.Cursor as Cursor
 import Utils.TaskBase exposing (run)
 import Utils.Typing as Typing
@@ -92,6 +93,7 @@ type Msg
     | TypingMsg Typing.Msg
       -- UI
     | CursorUI CursorUI
+    | CursorResize
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -177,6 +179,11 @@ update msg model =
                     , getCursorSize <| Just 100
                     )
 
+        CursorResize ->
+            ( model
+            , getCursorSize Nothing
+            )
+
 
 getCursorSize : Maybe Float -> Cmd Msg
 getCursorSize sleep =
@@ -197,9 +204,13 @@ getCursorSize sleep =
 
 subs : Model -> Sub Msg
 subs model =
-    model.typingModel
-        |> Typing.subs
-        |> Sub.map TypingMsg
+    Sub.batch
+        [ model.typingModel
+            |> Typing.subs
+            |> Sub.map TypingMsg
+
+        -- , Time.every 0 (\_ -> CursorResize)
+        ]
 
 
 
