@@ -3,16 +3,23 @@
 
 @mixin randomStar($selector) {
 	@for $star from 1 through 80 {
+		$x: Min(#{random(100)}vw, 100vw - 140%);
+		$y: Min(#{random(100)}vh, 100vh - 200%);
 		$width: div(randomNum(1, 4), 10);
 
-		$x: Min(#{random(100)}vw, 100vw - 120%);
-		$y: Min(#{random(100)}vh, 100vh - 120%);
 		&:nth-child(#{$star}) {
 			&::#{$selector} {
 				transform: translate(#{$x}, #{$y}) rotate(#{random(360)}deg);
+
 				width: $width + rem;
+
 				animation: blink #{randomNum(1000, 3000)}ms linear infinite;
-				background-color: hsla(var(--clr-text-1-alpha), randomNum(0.3, 0.7));
+
+				$h: random(360);
+				$s: random(100) * 1%;
+				$l: randomNum(50, 100) * 1%;
+				$a: randomNum(0.3, 0.7);
+				background-color: hsla($h, $s, $l, $a);
 			}
 		}
 		&:nth-child(odd) {
@@ -35,8 +42,6 @@
 
 				aspect-ratio: 1;
 				// border-radius: 100vw;
-
-				background-color: hsla(var(--clr-text-1-alpha), 0.25);
 			}
 
 			@include randomStar(before);
