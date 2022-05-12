@@ -17,13 +17,11 @@
 	}
 
 	&__cursor {
-		border-radius: var(--radius-round);
+		border-radius: var(--radius-round, 100vw);
 
 		border: 1px solid var(--clr-brand-1);
 
 		background-color: hsla(var(--clr-brand-1-alpha), 0.25);
-
-		// transition-duration: 100ms;
 
 		&::before {
 			content: "";

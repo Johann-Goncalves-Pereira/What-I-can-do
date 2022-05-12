@@ -262,12 +262,13 @@ viewLayout model =
     Layout.layout
         { pageConfig
             | route = Route.Home_
-            , rootContent = { before = cursor model, after = [] }
+            , rootContent = { before = cursor model, after = [ viewStars ] }
             , rootAttrs =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
                 , onMouseEnter Cursor.CursorShow
-                , onMouseLeave Cursor.CursorHide
+
+                -- , onMouseLeave Cursor.CursorHide
                 ]
                     |> List.map (Html.Attributes.map CursorMsg)
             , linkAttrs =
@@ -408,3 +409,10 @@ introStringList =
     , "I Love Code, UI and Design"
     , "So let's work together"
     ]
+
+
+viewStars : Html Msg
+viewStars =
+    div [ class "star__stars" ] []
+        |> List.repeat 80
+        |> div [ class "star" ]

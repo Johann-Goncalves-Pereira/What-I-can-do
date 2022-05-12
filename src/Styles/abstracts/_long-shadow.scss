@@ -1,0 +1,12 @@
+@function longShadowBuilder($color) {
+	$val: 0px 0px $color;
+	@for $i from 1 through 7 {
+		$color2: lighten($color, $i * 0.8);
+		$val: #{$val}, -#{$i}px #{$i}px #{$color2};
+	}
+	@return $val;
+}
+
+@mixin longShadow($color) {
+	text-shadow: longShadowBuilder($color);
+}

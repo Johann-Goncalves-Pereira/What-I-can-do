@@ -1,24 +1,48 @@
 @use "../abstracts" as *;
 @use "sass:math" as *;
 
-@function longShadowBuilder($color) {
-	$val: 0px 0px $color;
-	@for $i from 1 through 7 {
-		$color2: lighten($color, $i * 0.8);
-		$val: #{$val}, -#{$i}px #{$i}px #{$color2};
-	}
-	@return $val;
-}
+@mixin randomStar($selector) {
+	@for $star from 1 through 80 {
+		$width: div(randomNum(1, 4), 10);
 
-@mixin longShadow($color) {
-	text-shadow: longShadowBuilder($color);
+		$x: Min(#{random(100)}vw, 100vw - 120%);
+		$y: Min(#{random(100)}vh, 100vh - 120%);
+		&:nth-child(#{$star}) {
+			&::#{$selector} {
+				transform: translate(#{$x}, #{$y}) rotate(#{random(360)}deg);
+				width: $width + rem;
+				animation: blink #{randomNum(1000, 3000)}ms linear infinite;
+				background-color: hsla(var(--clr-text-1-alpha), randomNum(0.3, 0.7));
+			}
+		}
+		&:nth-child(odd) {
+			&::#{$selector} {
+				border-radius: #{random(6)}px;
+			}
+		}
+	}
 }
 
 .root--home {
-	background-image: url("../../../images/home-intro.svg");
-	background-position: top;
-	background-repeat: no-repeat;
-	background-size: cover;
+	.star {
+		&__stars {
+			&::before,
+			&::after {
+				content: "";
+				position: absolute;
+				top: 0;
+				left: 0;
+
+				aspect-ratio: 1;
+				// border-radius: 100vw;
+
+				background-color: hsla(var(--clr-text-1-alpha), 0.25);
+			}
+
+			@include randomStar(before);
+			@include randomStar(after);
+		}
+	}
 }
 
 .main--home {
