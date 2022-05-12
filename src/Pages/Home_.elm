@@ -48,7 +48,7 @@ type alias Model =
 
     -- UI
     , cursorUI : CursorUI
-    , cursorClass : String
+    , cursorChange : { class : String, size : Float }
     }
 
 
@@ -64,12 +64,11 @@ init =
 
       -- UI
       , cursorUI = CursorUINormal
-      , cursorClass = ""
+      , cursorChange = { class = "", size = 1 }
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
             |> Task.attempt GotHeader
-        , getCursorSize <| Just 5
         ]
     )
 
@@ -93,7 +92,6 @@ type Msg
     | TypingMsg Typing.Msg
       -- UI
     | CursorUI CursorUI
-    | CursorResize
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -152,53 +150,49 @@ update msg model =
         CursorUI ui ->
             let
                 mc =
-                    model.cursorClass
+                    model.cursorChange
             in
             case ui of
                 CursorUINormal ->
                     ( { model
-                        | cursorClass = ""
+                        | cursorChange = { mc | class = "", size = 1 }
                         , cursorUI = CursorUINormal
                       }
-                    , getCursorSize <| Just 100
+                    , Cmd.none
                     )
 
                 CursorUIMixSolid ->
                     ( { model
-                        | cursorClass = "--mix"
+                        | cursorChange = { mc | class = "--mix", size = 2 }
                         , cursorUI = CursorUIMixSolid
                       }
-                    , getCursorSize <| Just 100
+                    , Cmd.none
                     )
 
                 CursorUIClick ->
                     ( { model
-                        | cursorClass = "--click"
+                        | cursorChange = { mc | class = "--click", size = 5.5 }
                         , cursorUI = CursorUIClick
                       }
-                    , getCursorSize <| Just 100
+                    , Cmd.none
                     )
 
-        CursorResize ->
-            ( model
-            , getCursorSize Nothing
-            )
 
 
-getCursorSize : Maybe Float -> Cmd Msg
-getCursorSize sleep =
-    case sleep of
-        Just time ->
-            Process.sleep time
-                |> Task.andThen (\_ -> BrowserDom.getElement cursorId)
-                |> Task.attempt GotCursor
+{-
+   ? Task attempt and and andThen, Sleep
+   getCursorSize : Maybe Float -> Cmd Msg
+   getCursorSize sleep =
+       case sleep of
+           Just time ->
+               Process.sleep time
+                   |> Task.andThen (\_ -> BrowserDom.getElement cursorId)
+                   |> Task.attempt GotCursor
 
-        Nothing ->
-            BrowserDom.getElement cursorId
-                |> Task.attempt GotCursor
-
-
-
+           Nothing ->
+               BrowserDom.getElement cursorId
+                   |> Task.attempt GotCursor
+-}
 -- SUBSCRIBE
 
 
@@ -208,8 +202,6 @@ subs model =
         [ model.typingModel
             |> Typing.subs
             |> Sub.map TypingMsg
-
-        -- , Time.every 0 (\_ -> CursorResize)
         ]
 
 
@@ -234,8 +226,7 @@ viewLayout model =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
                 , onMouseEnter Cursor.CursorShow
-
-                -- , onMouseLeave Cursor.CursorHide
+                , onMouseLeave Cursor.CursorHide
                 ]
                     |> List.map (Html.Attributes.map CursorMsg)
             , linkAttrs =
@@ -262,29 +253,27 @@ cursor model =
             , normal = "root__" ++ cursorId
             }
 
-        cv :
-            { x : Float
-            , y : Float
-            , w : Float
-            , h : Float
-            }
+        cv : { x : Float, y : Float, s : Float }
         cv =
             -- Cursor Value
             { x = model.cursorModel.mouseClientPosition.x
             , y = model.cursorModel.mouseClientPosition.y
-            , w = model.cursorSize.w
-            , h = model.cursorSize.h
+            , s = model.cursorChange.size
             }
 
-        transformPosition : Maybe String -> Attribute msg
-        transformPosition more =
+        cursorStyle : Maybe String -> Attribute msg
+        cursorStyle more =
             String.concat
-                [ "transform:"
+                [ -- Size
+                  "width: " ++ String.fromFloat cv.s ++ "rem;"
+
+                -- Transform
+                , "transform:"
                 , "translate3d(clamp(0px,"
-                , Round.round 0 (cv.x - cv.w / 2)
+                , Round.round 0 (cv.x - (cv.s * 16) / 2)
                 , "px,100vw - 100% - 2px),"
                 , "clamp(0px,"
-                , Round.round 0 (cv.y - cv.h / 2)
+                , Round.round 0 (cv.y - (cv.s * 16) / 2)
                 , "px,100vh - 100% - 2px)"
                 , ", 0px) "
                 , case more of
@@ -307,11 +296,11 @@ cursor model =
             div
                 [ classList
                     [ ( classes.content, True )
-                    , ( classes.content ++ model.cursorClass
+                    , ( classes.content ++ model.cursorChange.class
                       , True
                       )
                     ]
-                , transformPosition moreTransform
+                , cursorStyle moreTransform
                 ]
                 content
 
@@ -320,10 +309,10 @@ cursor model =
             div
                 [ classList
                     [ ( classes.normal, True )
-                    , ( classes.normal ++ model.cursorClass, True )
+                    , ( classes.normal ++ model.cursorChange.class, True )
                     ]
                 , id cursorId
-                , transformPosition moreTransform
+                , cursorStyle moreTransform
                 ]
                 []
     in
@@ -338,7 +327,7 @@ cursor model =
             CursorUIClick ->
                 [ baseCursor Nothing
                 , cursorContent Nothing
-                    [ span [] [ text "Click Me" ] ]
+                    [ span [ class "click" ] [ text "Click Me" ] ]
                 ]
 
     else

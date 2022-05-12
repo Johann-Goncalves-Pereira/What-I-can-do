@@ -1,6 +1,8 @@
 .root {
 	&__cursor,
 	&__cursor--content {
+		$speed: cubic-bezier(0.39, 0.58, 0.57, 1);
+
 		position: fixed;
 		top: 0;
 		left: 0;
@@ -10,22 +12,65 @@
 
 		aspect-ratio: 1;
 
-		transition: all 75ms ease-out;
+		will-change: transform, backdrop-filter, background-color, width, mix-blend-mode;
+		transition: all 100ms $speed;
 	}
 
 	&__cursor {
-		width: 1rem;
-
 		border-radius: var(--radius-round);
 
-		background-color: var(--clr-brand-0);
+		border: 1px solid var(--clr-brand-1);
+
+		background-color: hsla(var(--clr-brand-1-alpha), 0.25);
+
+		// transition-duration: 100ms;
+
+		&::before {
+			content: "";
+			position: absolute;
+			inset: 1px;
+			border-radius: inherit;
+			border: 2px dotted var(--clr-brand-1);
+			animation: spin 1000ms linear infinite;
+		}
+
+		:is(&--click, &--mix)::before {
+			content: none;
+		}
 
 		&--click {
-			width: 2rem;
+			backdrop-filter: blur(0.25rem);
+		}
+
+		&--mix {
+			background-color: var(--clr-brand-1);
+			mix-blend-mode: difference;
 		}
 	}
 
 	&__cursor--content {
+		display: grid;
+		place-items: center;
+
+		transition-duration: 75ms;
+
+		&--click {
+			.click {
+				animation: popUp 100ms ease-in;
+			}
+		}
+	}
+}
+
+@keyframes popUp {
+	0% {
+		opacity: 0;
+		transform: translateY(1rem) scale(0);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+		transform-origin: bottom center;
 	}
 }
 
