@@ -48,7 +48,11 @@ type alias Model =
 
     -- UI
     , cursorUI : CursorUI
-    , cursorChange : { class : String, size : Float }
+    , cursorChange :
+        { class : String
+        , size : Float
+        , resize : Float
+        }
     }
 
 
@@ -64,7 +68,11 @@ init =
 
       -- UI
       , cursorUI = CursorUINormal
-      , cursorChange = { class = "", size = 1 }
+      , cursorChange =
+            { class = ""
+            , size = 1
+            , resize = 1
+            }
       }
     , Cmd.batch
         [ BrowserDom.getElement headerClass
@@ -83,6 +91,11 @@ type CursorUI
     | CursorUIClick
 
 
+type CursorResize
+    = CursorResizeBigger
+    | CursorResizeSmaller
+
+
 type Msg
     = -- Size
       GotHeader (Result Error Element)
@@ -92,6 +105,7 @@ type Msg
     | TypingMsg Typing.Msg
       -- UI
     | CursorUI CursorUI
+    | CursorResize CursorResize
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -177,6 +191,18 @@ update msg model =
                     , Cmd.none
                     )
 
+        CursorResize resize ->
+            let
+                mc =
+                    model.cursorChange
+            in
+            case resize of
+                CursorResizeBigger ->
+                    ( { model | cursorChange = { mc | resize = mc.resize + 0.125 } }, Cmd.none )
+
+                CursorResizeSmaller ->
+                    ( { model | cursorChange = { mc | resize = mc.resize - 0.125 } }, Cmd.none )
+
 
 
 {-
@@ -198,10 +224,25 @@ update msg model =
 
 subs : Model -> Sub Msg
 subs model =
+    let
+        cg =
+            model.cursorChange
+    in
     Sub.batch
         [ model.typingModel
             |> Typing.subs
             |> Sub.map TypingMsg
+        , if cg.size == cg.resize then
+            Sub.none
+
+          else if cg.size < cg.resize then
+            Time.every 1 (\_ -> CursorResize CursorResizeSmaller)
+
+          else if cg.size > cg.resize then
+            Time.every 1 (\_ -> CursorResize CursorResizeBigger)
+
+          else
+            Sub.none
         ]
 
 
@@ -258,7 +299,7 @@ cursor model =
             -- Cursor Value
             { x = model.cursorModel.mouseClientPosition.x
             , y = model.cursorModel.mouseClientPosition.y
-            , s = model.cursorChange.size
+            , s = model.cursorChange.resize
             }
 
         cursorStyle : Maybe String -> Attribute msg

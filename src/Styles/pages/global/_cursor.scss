@@ -13,7 +13,7 @@
 		aspect-ratio: 1;
 
 		will-change: transform, backdrop-filter, background-color, width, mix-blend-mode;
-		transition: all 100ms $speed;
+		transition: all 100ms $speed, width 0ms linear;
 	}
 
 	&__cursor {
@@ -56,21 +56,28 @@
 
 		&--click {
 			.click {
-				animation: popUp 100ms ease-in;
+				transform-origin: bottom center;
+				opacity: 0;
+				transform: translateY(1rem) scale(0);
+
+				animation-name: popUp;
+				animation-duration: 100ms;
+				animation-timing-function: ease-out;
+				animation-fill-mode: forwards;
+				animation-delay: 200ms;
 			}
 		}
 	}
 }
 
 @keyframes popUp {
-	0% {
+	from {
 		opacity: 0;
 		transform: translateY(1rem) scale(0);
 	}
-	100% {
+	to {
 		opacity: 1;
-		transform: translateY(0) scale(1);
-		transform-origin: bottom center;
+		transform: translateY(0);
 	}
 }
 
