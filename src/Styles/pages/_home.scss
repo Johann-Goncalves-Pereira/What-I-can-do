@@ -1,8 +1,8 @@
 @use "../abstracts" as *;
 @use "sass:math" as *;
 
-@mixin randomStar($selector) {
-	@for $star from 1 through 80 {
+@mixin randomStar($selector, $amount: 40) {
+	@for $star from 1 through $amount {
 		$x: Min(#{random(100)}vw, 100vw - 140%);
 		$y: Min(#{random(100)}vh, 100vh - 200%);
 		$width: div(randomNum(1, 4), 10);

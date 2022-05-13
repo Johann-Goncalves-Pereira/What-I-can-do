@@ -1,12 +1,19 @@
 module Pages.Home_ exposing (Model, Msg, page, subs)
 
 import Array exposing (Array)
-import Browser.Dom as BrowserDom exposing (Element, Error)
+import Browser.Dom as BrowserDom
+    exposing
+        ( Element
+        , Error
+        , Viewport
+        , getViewport
+        )
+import Browser.Events as BrowserEvents
 import Gen.Params.Home_ exposing (Params)
 import Gen.Route as Route
-import Html exposing (Attribute, Html, div, h1, p, section, span, text)
+import Html exposing (Attribute, Html, a, code, div, h1, h2, header, p, pre, section, span, text)
 import Html.Attributes exposing (attribute, class, classList, id)
-import Html.Events exposing (onMouseEnter, onMouseLeave)
+import Html.Events exposing (onMouseEnter, onMouseLeave, onMouseOut, onMouseOver)
 import Html.Events.Extra.Mouse as Mouse
 import Layout exposing (headerClass, pageConfig)
 import Page
@@ -14,6 +21,7 @@ import Process
 import Request
 import Round
 import Shared
+import SyntaxHighlight exposing (elm, toInlineHtml)
 import Task
 import Time
 import Utils.Cursor as Cursor
@@ -53,6 +61,12 @@ type alias Model =
         , size : Float
         , resize : Float
         }
+
+    -- Highlight
+    , elmCode : String
+
+    -- ViewPort
+    , viewport : { w : Float, h : Float }
     }
 
 
@@ -73,9 +87,16 @@ init =
             , size = 1
             , resize = 1
             }
+
+      -- Highlight
+      , elmCode = ""
+
+      -- ViewPort
+      , viewport = { w = 0, h = 0 }
       }
     , Cmd.batch
-        [ BrowserDom.getElement headerClass
+        [ Task.perform GotViewport getViewport
+        , BrowserDom.getElement headerClass
             |> Task.attempt GotHeader
         ]
     )
@@ -106,6 +127,9 @@ type Msg
       -- UI
     | CursorUI CursorUI
     | CursorResize CursorResize
+      -- ViewPort
+    | GotViewport Viewport
+    | GotNewViewport ( Float, Float )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -203,21 +227,27 @@ update msg model =
                 CursorResizeSmaller ->
                     ( { model | cursorChange = { mc | resize = mc.resize - 0.125 } }, Cmd.none )
 
+        GotViewport v_ ->
+            let
+                ( w_, h_ ) =
+                    ( v_.viewport.width, v_.viewport.height )
+            in
+            ( { model | viewport = { w = w_, h = h_ } }
+            , Cmd.none
+            )
+
+        GotNewViewport ( w_, h_ ) ->
+            ( { model | viewport = { w = w_, h = h_ } }
+            , Cmd.none
+            )
+
 
 
 {-
    ? Task attempt and and andThen, Sleep
-   getCursorSize : Maybe Float -> Cmd Msg
-   getCursorSize sleep =
-       case sleep of
-           Just time ->
-               Process.sleep time
-                   |> Task.andThen (\_ -> BrowserDom.getElement cursorId)
-                   |> Task.attempt GotCursor
-
-           Nothing ->
-               BrowserDom.getElement cursorId
-                   |> Task.attempt GotCursor
+   Process.sleep time
+       |> Task.andThen (\_ -> BrowserDom.getElement cursorId)
+       |> Task.attempt GotCursor
 -}
 -- SUBSCRIBE
 
@@ -243,6 +273,8 @@ subs model =
 
           else
             Sub.none
+        , BrowserEvents.onResize
+            (\w h -> GotNewViewport ( model.viewport.w, model.viewport.h ))
         ]
 
 
@@ -262,18 +294,18 @@ viewLayout model =
     Layout.layout
         { pageConfig
             | route = Route.Home_
-            , rootContent = { before = cursor model, after = [ viewStars ] }
+            , rootContent = { before = cursor model, after = [{- viewStars -}] }
             , rootAttrs =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
-                , onMouseEnter Cursor.CursorShow
+                , onMouseOver Cursor.CursorShow
 
-                -- , onMouseLeave Cursor.CursorHide
+                -- , onMouseOut Cursor.CursorHide
                 ]
                     |> List.map (Html.Attributes.map CursorMsg)
             , linkAttrs =
-                [ onMouseEnter <| CursorUI CursorUIMixSolid
-                , onMouseLeave <| CursorUI CursorUINormal
+                [ onMouseOver <| CursorUI CursorUIMixSolid
+                , onMouseOut <| CursorUI CursorUINormal
                 ]
             , mainAttrs =
                 [ customProps
@@ -295,12 +327,26 @@ cursor model =
             , normal = "root__" ++ cursorId
             }
 
-        cv : { x : Float, y : Float, s : Float }
+        vp : { w : Float, h : Float }
+        vp =
+            { w = model.viewport.w, h = model.viewport.h }
+
+        cv : { x : Float, y : Float, s : Float, sRem : Float }
         cv =
-            -- Cursor Value
             { x = model.cursorModel.mouseClientPosition.x
             , y = model.cursorModel.mouseClientPosition.y
             , s = model.cursorChange.resize
+            , sRem = model.cursorChange.resize * 16
+            }
+
+        pos : { x : String, y : String }
+        pos =
+            { x =
+                clamp cv.s (vp.w - cv.sRem) (cv.x - cv.sRem / 2)
+                    |> Round.round 0
+            , y =
+                clamp cv.s (vp.h - cv.sRem) (cv.y - cv.sRem / 2)
+                    |> Round.round 0
             }
 
         cursorStyle : Maybe String -> Attribute msg
@@ -311,13 +357,10 @@ cursor model =
 
                 -- Transform
                 , "transform:"
-                , "translate3d(clamp(0px,"
-                , Round.round 0 (cv.x - (cv.s * 16) / 2)
-                , "px,100vw - 100% - 2px),"
-                , "clamp(0px,"
-                , Round.round 0 (cv.y - (cv.s * 16) / 2)
-                , "px,100vh - 100% - 2px)"
-                , ", 0px) "
+                , "translate3d("
+                , pos.x ++ "px,"
+                , pos.y ++ "px,"
+                , "0px) "
                 , case more of
                     Just m ->
                         m
@@ -383,21 +426,30 @@ cursorId =
 
 mainContentList : Model -> List (Html Msg)
 mainContentList model =
-    [ viewIntro model ]
+    [ viewIntro model, viewShowOf model ]
 
 
 viewIntro : Model -> Html Msg
 viewIntro model =
     section [ class "intro" ]
-        [ div
+        [ header
             [ class "intro__title-wrapper"
-            , onMouseEnter (CursorUI CursorUIClick)
-            , onMouseLeave (CursorUI CursorUINormal)
+            , onMouseOver (CursorUI CursorUIClick)
+            , onMouseOut (CursorUI CursorUINormal)
             ]
             [ class "intro__title"
                 |> Typing.tc model.typingModel h1
                 |> Html.map TypingMsg
             ]
+        ]
+
+
+viewShowOf : Model -> Html Msg
+viewShowOf model =
+    section [ class "show-of" ]
+        [ header []
+            [ h2 [] [ text "I write in elm" ] ]
+        , div [] [ info model ]
         ]
 
 
@@ -414,5 +466,16 @@ introStringList =
 viewStars : Html Msg
 viewStars =
     div [ class "star__stars" ] []
-        |> List.repeat 80
+        |> List.repeat 40
         |> div [ class "star" ]
+
+
+info : Model -> Html msg
+info model =
+    div []
+        [ SyntaxHighlight.useTheme SyntaxHighlight.oneDark
+        , elm model.elmCode
+            |> Result.map (SyntaxHighlight.toBlockHtml (Just 1))
+            |> Result.withDefault
+                (pre [] [ code [] [ text model.elmCode ] ])
+        ]

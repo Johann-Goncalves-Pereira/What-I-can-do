@@ -1,5 +1,6 @@
 @use "../abstracts/" as *;
 @use "sass:string";
+@use "sass:color" as c;
 
 //? Prevent Hsl to transform in Hex.
 @function hsl($h, $s, $l) {
