@@ -1,4 +1,4 @@
-@function randomNum($min, $max) {
+@function randomFit($min, $max) {
 	$rand: random();
 	$randomNum: $min + floor($rand * (($max - $min) + 1));
 
