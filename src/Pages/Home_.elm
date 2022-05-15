@@ -298,7 +298,7 @@ viewLayout model =
             , rootAttrs =
                 [ -- Cursor
                   Mouse.onMove (.clientPos >> Cursor.ClientMovement)
-                , onMouseOver Cursor.CursorShow
+                , onMouseOver <| Cursor.CursorViewToggler True
 
                 -- , onMouseOut Cursor.CursorHide
                 ]
