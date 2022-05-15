@@ -16,8 +16,7 @@ init =
 
 type Msg
     = ClientMovement ( Float, Float )
-    | CursorShow
-    | CursorHide
+    | CursorViewToggler Bool
 
 
 update : Msg -> Model -> Model
@@ -31,12 +30,7 @@ update msg model =
                     }
             }
 
-        CursorShow ->
+        CursorViewToggler show ->
             { model
-                | mouseCursorShow = True
-            }
-
-        CursorHide ->
-            { model
-                | mouseCursorShow = False
+                | mouseCursorShow = show
             }

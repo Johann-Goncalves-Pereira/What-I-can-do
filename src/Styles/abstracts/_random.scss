@@ -1,6 +1,6 @@
 @function randomFit($min, $max) {
 	$rand: random();
-	$randomNum: $min + floor($rand * (($max - $min) + 1));
+	$randomFit: $min + floor($rand * (($max - $min) + 1));
 
-	@return $randomNum;
+	@return $randomFit;
 }
