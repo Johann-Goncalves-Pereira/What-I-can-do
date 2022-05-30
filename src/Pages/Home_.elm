@@ -274,7 +274,7 @@ subs model =
           else
             Sub.none
         , BrowserEvents.onResize
-            (\w h -> GotNewViewport ( model.viewport.w, model.viewport.h ))
+            (\w h -> GotNewViewport ( toFloat w, toFloat h ))
         ]
 
 
